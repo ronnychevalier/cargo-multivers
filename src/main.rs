@@ -1,6 +1,8 @@
 use std::io::stdout;
+use std::io::BufRead;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use anyhow::Context;
 
@@ -29,7 +31,11 @@ include!(concat!(env!("OUT_DIR"), "/codegen.rs"));
 
 #[derive(clap::Args)]
 struct Args {
-    /// Rebuilds the std for each feature set as well (requires nightly)
+    /// Build for the target triple
+    #[clap(long, value_name = "TRIPLE")]
+    target: Option<String>,
+
+    /// Rebuild the std for each feature set as well
     #[clap(long)]
     rebuild_std: bool,
 
@@ -47,29 +53,47 @@ struct Args {
     features: clap_cargo::Features,
 }
 
+impl Args {
+    pub fn target(&self) -> anyhow::Result<String> {
+        let rustc_v = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()))
+            .args(["rustc", "--", "-vV"])
+            .output()?;
+
+        if let Some(target) = &self.target {
+            Ok(target.to_owned())
+        } else {
+            rustc_v
+                .stdout
+                .lines()
+                .into_iter()
+                .filter_map(Result::ok)
+                .find_map(|line| line.strip_prefix("host: ").map(ToOwned::to_owned))
+                .ok_or_else(|| anyhow::anyhow!("Failed to detect default target"))
+        }
+    }
+}
+
 fn build_everything(
+    target: &str,
     package: &Package,
     rebuild_std: bool,
     metadata: &Metadata,
     features: &clap_cargo::Features,
-) -> impl Iterator<Item = anyhow::Result<Build>> {
+) -> anyhow::Result<Vec<Build>> {
     let output_directory = metadata.target_directory.join(clap::crate_name!());
-
     let manifest_path = package.manifest_path.as_std_path().to_path_buf();
-
-    let all_features = features.all_features;
-    let no_default_features = features.no_default_features;
     let features_list = features.features.join(" ");
+    let rust_flags = std::env::var("RUST_FLAGS").unwrap_or_default();
 
-    CPUS["X86"]
+    let mut builds = CPUS["X86"]
         .into_iter()
         .filter_map(move |(cpu, cpu_features)| {
             println!("    Building for x86-{cpu}");
 
-            let rust_flags = std::env::var("RUST_FLAGS").unwrap_or_default();
             let rust_flags = format!("{rust_flags} -Ctarget-cpu={cpu}");
             let cargo = CargoBuild::new()
                 .release()
+                .target(target)
                 .target_dir(&output_directory)
                 .manifest_path(&manifest_path)
                 .env("RUSTFLAGS", rust_flags);
@@ -81,9 +105,9 @@ fn build_everything(
                 cargo
             };
 
-            let cargo = if all_features {
+            let cargo = if features.all_features {
                 cargo.all_features()
-            } else if no_default_features {
+            } else if features.no_default_features {
                 cargo.no_default_features()
             } else {
                 cargo.features(&features_list)
@@ -143,6 +167,18 @@ fn build_everything(
 
             Some(Ok(build))
         })
+        .into_iter()
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    builds.sort_unstable_by(|build1, build2| {
+        // Awful heuristic just to use in priority the build with the largest feature set supported
+        build1
+            .required_cpu_features()
+            .len()
+            .cmp(&build2.required_cpu_features().len())
+            .reverse()
+    });
+
+    Ok(builds)
 }
 
 fn create_runner_crate(output_directory: &Path) -> anyhow::Result<PathBuf> {
@@ -168,6 +204,10 @@ enum Cargo {
 fn main() -> anyhow::Result<()> {
     let Cargo::Multivers(args) = Cargo::parse();
 
+    // We must set a target, otherwise RUSTFLAGS will be used by the build scripts as well
+    // (which we don't want since we might build with features not supported by the CPU building the package).
+    // See https://github.com/rust-lang/cargo/issues/4423
+    let target = args.target()?;
     let metadata = args
         .manifest
         .metadata()
@@ -179,22 +219,13 @@ fn main() -> anyhow::Result<()> {
     for selected_package in selected_packages {
         println!("Building package {}", selected_package.name);
 
-        let mut builds = build_everything(
+        let builds = build_everything(
+            &target,
             selected_package,
             args.rebuild_std,
             &metadata,
             &args.features,
-        )
-        .into_iter()
-        .collect::<anyhow::Result<Vec<_>>>()?;
-        builds.sort_unstable_by(|build1, build2| {
-            // Awful heuristic just to use in priority the build with the largest feature set supported
-            build1
-                .required_cpu_features()
-                .len()
-                .cmp(&build2.required_cpu_features().len())
-                .reverse()
-        });
+        )?;
 
         print!("    Encoding and compressing builds");
         let _ = stdout().flush();
