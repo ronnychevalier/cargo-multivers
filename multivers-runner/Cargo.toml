@@ -1,0 +1,17 @@
+[package]
+name = "multivers-runner"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[dependencies]
+anyhow = "1.0.68"
+bincode = { version = "2.0.0-rc.2", default-features = false, features = ["std", "derive"] }
+flate2 = "1.0.25"
+std_detect = { git = "https://github.com/rust-lang/stdarch", rev = "368ba1a204f3cc1bb245769fd1d655ab47fe92c9", package = "std_detect" }
+tempfile = "3.3.0"
+
+[profile.release]
+lto = true
+strip = "symbols"

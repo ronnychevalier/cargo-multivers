@@ -1,0 +1,35 @@
+[package]
+name = "cargo-multivers"
+version = "0.1.0"
+edition = "2021"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+categories = ["hardware-support", "command-line-utilities", "development-tools::cargo-plugins"]
+description = "Cargo subcommand to build a portable optimized binary"
+rust-version = "1.60"
+
+[dependencies]
+anyhow = "1.0.68"
+escargot = "0.5.7"
+phf = { version = "0.11.1", default-features = false }
+clap = { version = "4.0.32", features = ["derive", "cargo"] }
+bincode = { version = "2.0.0-rc.2", default-features = false, features = ["std", "derive"] }
+flate2 = "1.0.25"
+humansize = { version = "2", features = ["no_alloc"] }
+clap-cargo = { version = "0.10", features = ["cargo_metadata"] }
+cargo_metadata = "0.15.2"
+
+[build-dependencies]
+phf = { version = "0.11.1", default-features = false }
+phf_codegen = "0.11.1"
+
+[workspace]
+exclude = [
+    "multivers-runner",
+    "tests/test-nothing",
+    "tests/test-useless-computation",
+]
+
+[profile.release]
+lto = true
+strip = "symbols"
