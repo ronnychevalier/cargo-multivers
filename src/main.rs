@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::stdout;
 use std::io::BufRead;
 use std::io::Write;
@@ -173,6 +174,30 @@ fn is_valid_cpu_for_target(triple: &Triple, cpu: &str) -> bool {
     true
 }
 
+fn cpu_features_from_target(target: &str) -> anyhow::Result<HashMap<String, Vec<String>>> {
+    let triple = Triple::from_str(target).context("Failed to parse the target")?;
+    let features_sets: HashMap<String, Vec<String>> = cpus_from_target(target)
+        .context("Failed to get the set of CPUs for the target")?
+        .into_iter()
+        .filter(|cpu| is_valid_cpu_for_target(&triple, cpu))
+        .map(|cpu| {
+            let features = features_from_cpu(target, &cpu)?;
+            let features_flags = features
+                .iter()
+                .fold(String::new(), |mut features, feature| {
+                    features.push('+');
+                    features.push_str(feature);
+                    features.push(',');
+                    features
+                });
+            let features_flags = features_flags.trim_end_matches(',');
+            Ok((features_flags.to_owned(), features))
+        })
+        .collect::<anyhow::Result<HashMap<String, Vec<String>>>>()?;
+
+    Ok(features_sets)
+}
+
 fn build_everything(
     target: &str,
     package: &Package,
@@ -185,16 +210,14 @@ fn build_everything(
     let features_list = features.features.join(" ");
     let rust_flags = std::env::var("RUST_FLAGS").unwrap_or_default();
 
-    let triple = Triple::from_str(target).context("Failed to parse the target")?;
-
-    let cpus = cpus_from_target(target).context("Failed to get the set of CPUs for the target")?;
-    let mut builds = cpus
+    let cpu_features = cpu_features_from_target(target)
+        .context("Failed to get the set of CPU features for the target")?;
+    let mut builds = cpu_features
         .into_iter()
-        .filter(|cpu| is_valid_cpu_for_target(&triple, cpu))
-        .filter_map(move |cpu| {
-            println!("    Building for target={target} target-cpu={cpu}");
+        .filter_map(move |(target_features_flags, cpu_features)| {
+            println!("    Building for {target} with features `{target_features_flags}`");
 
-            let rust_flags = format!("{rust_flags} -Ctarget-cpu={cpu}");
+            let rust_flags = format!("{rust_flags} -Ctarget-feature={target_features_flags}");
             let cargo = CargoBuild::new()
                 .release()
                 .target(target)
@@ -220,7 +243,7 @@ fn build_everything(
             let cargo = match cargo.exec() {
                 Ok(cargo) => cargo,
                 Err(e) => {
-                    eprintln!("{e}");
+                    eprintln!("    Failed to build for {target} with features `{target_features_flags}`: {e}");
                     return None;
                 }
             };
@@ -229,7 +252,7 @@ fn build_everything(
                 let message = match message {
                     Ok(message) => message,
                     Err(e) => {
-                        eprintln!("    Failed to build for target={target} target-cpu={cpu}: {e}");
+                        eprintln!("    Failed to build for {target} with features `{target_features_flags}`: {e}");
                         return None;
                     }
                 };
@@ -252,7 +275,7 @@ fn build_everything(
                         None
                     }
                     Err(e) => {
-                        eprintln!("    Failed to build for target={target} target-cpu={cpu}: {e}");
+                        eprintln!("    Failed to build for {target} with features `{target_features_flags}`: {e}");
                         None
                     }
                     _ => {
@@ -269,10 +292,6 @@ fn build_everything(
                 Err(e) => return Some(Err(e)),
             };
 
-            let cpu_features = match features_from_cpu(target, &cpu) {
-                Ok(cpu_features) => cpu_features,
-                Err(e) => return Some(Err(e)),
-            };
             let build = Build::new(bytes, cpu_features);
 
             Some(Ok(build))
