@@ -20,7 +20,7 @@ use escargot::CargoBuild;
 
 use humansize::{SizeFormatter, DECIMAL};
 
-use target_lexicon::Triple;
+use target_lexicon::{Architecture, Triple};
 
 mod build;
 
@@ -128,6 +128,51 @@ fn cpus_from_target(target: &str) -> anyhow::Result<Vec<String>> {
     Ok(cpus)
 }
 
+fn is_valid_cpu_for_target(triple: &Triple, cpu: &str) -> bool {
+    if triple.architecture == Architecture::X86_64 {
+        // We need to ignore some CPUs, otherwise we get errors like `LLVM ERROR: 64-bit code requested on a subtarget that doesn't support it!`
+        // See https://github.com/rust-lang/rust/issues/81148
+        if [
+            "athlon",
+            "athlon-4",
+            "athlon-xp",
+            "athlon-mp",
+            "athlon-tbird",
+            "c3",
+            "c3-2",
+            "geode",
+            "i386",
+            "i486",
+            "i586",
+            "i686",
+            "k6",
+            "k6-2",
+            "k6-3",
+            "lakemont",
+            "pentium",
+            "pentium-m",
+            "pentium-mmx",
+            "pentium2",
+            "pentium3",
+            "pentium3m",
+            "pentium4",
+            "pentium4m",
+            "pentiumpro",
+            "pentiumprescott",
+            "prescott",
+            "winchip-c6",
+            "winchip2",
+            "yonah",
+        ]
+        .contains(&cpu)
+        {
+            return false;
+        }
+    }
+
+    true
+}
+
 fn build_everything(
     target: &str,
     package: &Package,
@@ -140,11 +185,12 @@ fn build_everything(
     let features_list = features.features.join(" ");
     let rust_flags = std::env::var("RUST_FLAGS").unwrap_or_default();
 
-    let _triple = Triple::from_str(target).context("Failed to parse the target")?;
+    let triple = Triple::from_str(target).context("Failed to parse the target")?;
 
     let cpus = cpus_from_target(target).context("Failed to get the set of CPUs for the target")?;
     let mut builds = cpus
         .into_iter()
+        .filter(|cpu| is_valid_cpu_for_target(&triple, cpu))
         .filter_map(move |cpu| {
             println!("    Building for target={target} target-cpu={cpu}");
 
