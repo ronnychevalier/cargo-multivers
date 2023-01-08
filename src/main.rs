@@ -99,7 +99,7 @@ fn build_everything(
                 .env("RUSTFLAGS", rust_flags);
 
             let cargo = if rebuild_std {
-                cargo.current_target().args(["-Zbuild-std=std"])
+                cargo.args(["-Zbuild-std=std"])
                 // TODO: -Zbuild-std-features
             } else {
                 cargo
@@ -260,7 +260,7 @@ fn main() -> anyhow::Result<()> {
             .env("CARGO_MULTIVERS_BUILDS_PATH", builds_path);
 
         let cargo = if args.rebuild_std {
-            cargo.current_target().args(["-Zbuild-std=std"])
+            cargo.args(["-Zbuild-std=std"])
             // TODO: -Zbuild-std-features
         } else {
             cargo
