@@ -7,5 +7,4 @@ publish = false
 [dependencies]
 
 [profile.release]
-lto = true
 strip = "symbols"

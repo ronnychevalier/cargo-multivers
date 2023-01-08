@@ -3,6 +3,7 @@ use std::io::BufRead;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::str::FromStr;
 
 use anyhow::Context;
 
@@ -19,6 +20,8 @@ use escargot::CargoBuild;
 
 use humansize::{SizeFormatter, DECIMAL};
 
+use target_lexicon::Triple;
+
 mod build;
 
 use build::Build;
@@ -26,8 +29,6 @@ use build::Build;
 const RUNNER_CARGO_TOML: &[u8] = include_bytes!("../multivers-runner/Cargo.toml");
 const RUNNER_MAIN: &[u8] = include_bytes!("../multivers-runner/src/main.rs");
 const RUNNER_BUILD: &[u8] = include_bytes!("build.rs");
-
-include!(concat!(env!("OUT_DIR"), "/codegen.rs"));
 
 #[derive(clap::Args)]
 struct Args {
@@ -60,7 +61,7 @@ impl Args {
             .output()?;
 
         if let Some(target) = &self.target {
-            Ok(target.to_owned())
+            Ok(target.clone())
         } else {
             rustc_v
                 .stdout
@@ -71,6 +72,60 @@ impl Args {
                 .ok_or_else(|| anyhow::anyhow!("Failed to detect default target"))
         }
     }
+}
+
+fn features_from_cpu(target: &str, cpu: &str) -> anyhow::Result<Vec<String>> {
+    let cfg = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()))
+        .args([
+            "rustc",
+            "--",
+            "--print",
+            "cfg",
+            "--target",
+            target,
+            &format!("-Ctarget-cpu={cpu}"),
+        ])
+        .output()?;
+
+    let features = cfg
+        .stdout
+        .lines()
+        .filter_map(Result::ok)
+        .filter_map(|line| {
+            let line = line.strip_prefix("target_feature=\"")?;
+            // Ignores lines such as llvm14-builtins-abi
+            if line.starts_with("llvm") {
+                return None;
+            }
+
+            line.strip_suffix('"').map(ToOwned::to_owned)
+        })
+        .collect();
+
+    Ok(features)
+}
+
+fn cpus_from_target(target: &str) -> anyhow::Result<Vec<String>> {
+    let cpus = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()))
+        .args(["rustc", "--", "--print", "target-cpus", "--target", target])
+        .output()?;
+
+    let cpus = cpus
+        .stdout
+        .lines()
+        .skip(1)
+        .filter_map(Result::ok)
+        .filter_map(|line| {
+            let line = line.trim();
+            if line.starts_with("native") || line.is_empty() {
+                return None;
+            }
+
+            Some(line.to_owned())
+        })
+        .collect();
+
+    Ok(cpus)
 }
 
 fn build_everything(
@@ -85,10 +140,13 @@ fn build_everything(
     let features_list = features.features.join(" ");
     let rust_flags = std::env::var("RUST_FLAGS").unwrap_or_default();
 
-    let mut builds = CPUS["X86"]
+    let _triple = Triple::from_str(target).context("Failed to parse the target")?;
+
+    let cpus = cpus_from_target(target).context("Failed to get the set of CPUs for the target")?;
+    let mut builds = cpus
         .into_iter()
-        .filter_map(move |(cpu, cpu_features)| {
-            println!("    Building for x86-{cpu}");
+        .filter_map(move |cpu| {
+            println!("    Building for target={target} target-cpu={cpu}");
 
             let rust_flags = format!("{rust_flags} -Ctarget-cpu={cpu}");
             let cargo = CargoBuild::new()
@@ -125,7 +183,7 @@ fn build_everything(
                 let message = match message {
                     Ok(message) => message,
                     Err(e) => {
-                        eprintln!("{e}");
+                        eprintln!("    Failed to build for target={target} target-cpu={cpu}: {e}");
                         return None;
                     }
                 };
@@ -140,8 +198,15 @@ fn build_everything(
                             None
                         }
                     }
+                    Ok(escargot::format::Message::CompilerMessage(e)) => {
+                        if let Some(rendered) = e.message.rendered {
+                            eprint!("{rendered}");
+                        }
+
+                        None
+                    }
                     Err(e) => {
-                        eprintln!("{e}");
+                        eprintln!("    Failed to build for target={target} target-cpu={cpu}: {e}");
                         None
                     }
                     _ => {
@@ -157,13 +222,12 @@ fn build_everything(
                 Ok(bytes) => bytes,
                 Err(e) => return Some(Err(e)),
             };
-            let build = Build::new(
-                bytes,
-                cpu_features
-                    .into_iter()
-                    .map(|&cpu_feature| cpu_feature.to_owned())
-                    .collect(),
-            );
+
+            let cpu_features = match features_from_cpu(target, &cpu) {
+                Ok(cpu_features) => cpu_features,
+                Err(e) => return Some(Err(e)),
+            };
+            let build = Build::new(bytes, cpu_features);
 
             Some(Ok(build))
         })
