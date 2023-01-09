@@ -215,7 +215,7 @@ fn build_everything(
     let mut builds = cpu_features
         .into_iter()
         .filter_map(move |(target_features_flags, cpu_features)| {
-            println!("    Building for {target} with features `{target_features_flags}`");
+            println!("    Building with features `{target_features_flags}`");
 
             let rust_flags = format!("{rust_flags} -Ctarget-feature={target_features_flags}");
             let cargo = CargoBuild::new()
@@ -243,7 +243,7 @@ fn build_everything(
             let cargo = match cargo.exec() {
                 Ok(cargo) => cargo,
                 Err(e) => {
-                    eprintln!("    Failed to build for {target} with features `{target_features_flags}`: {e}");
+                    eprintln!("    Failed to build with features `{target_features_flags}`: {e}");
                     return None;
                 }
             };
@@ -252,7 +252,9 @@ fn build_everything(
                 let message = match message {
                     Ok(message) => message,
                     Err(e) => {
-                        eprintln!("    Failed to build for {target} with features `{target_features_flags}`: {e}");
+                        eprintln!(
+                            "    Failed to build with features `{target_features_flags}`: {e}"
+                        );
                         return None;
                     }
                 };
@@ -275,7 +277,9 @@ fn build_everything(
                         None
                     }
                     Err(e) => {
-                        eprintln!("    Failed to build for {target} with features `{target_features_flags}`: {e}");
+                        eprintln!(
+                            "    Failed to build with features `{target_features_flags}`: {e}"
+                        );
                         None
                     }
                     _ => {

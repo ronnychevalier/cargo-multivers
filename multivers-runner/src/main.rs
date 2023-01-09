@@ -8,6 +8,9 @@ use bincode::config;
 
 use flate2::read::DeflateDecoder;
 
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+
 mod build;
 
 use build::Build;
@@ -37,7 +40,14 @@ fn main() -> anyhow::Result<()> {
             anyhow::anyhow!("Failed to find a build satisfying the current CPU's features")
         })?;
 
-    let file = tempfile::NamedTempFile::new().context("Failed to create a temporary file")?;
+    let mut file = tempfile::NamedTempFile::new().context("Failed to create a temporary file")?;
+    #[cfg(unix)]
+    {
+        let metadata = file.as_file().metadata()?;
+        let mut permissions = metadata.permissions();
+
+        permissions.set_mode(0o700);
+    }
 
     std::fs::write(file.path(), build.as_bytes()).with_context(|| {
         format!(
