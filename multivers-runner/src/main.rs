@@ -60,7 +60,7 @@ fn main() -> anyhow::Result<()> {
     let path = file.into_temp_path();
 
     let exit_status = Command::new(&path)
-        .args(std::env::args_os())
+        .args(std::env::args_os().next())
         .status()
         .with_context(|| format!("Failed to execute temporary file `{}`", path.display()))?;
 
