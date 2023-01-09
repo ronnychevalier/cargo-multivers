@@ -1,5 +1,6 @@
 #![feature(stdsimd)]
 
+use std::io::Write;
 use std::process::Command;
 
 use anyhow::Context;
@@ -49,7 +50,7 @@ fn main() -> anyhow::Result<()> {
         permissions.set_mode(0o700);
     }
 
-    std::fs::write(file.path(), build.as_bytes()).with_context(|| {
+    file.write_all(build.as_bytes()).with_context(|| {
         format!(
             "Failed to write the build to the temporary file `{}`",
             file.path().display()
