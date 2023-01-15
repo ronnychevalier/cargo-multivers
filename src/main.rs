@@ -20,6 +20,8 @@ use humansize::{SizeFormatter, DECIMAL};
 
 use target_lexicon::{Architecture, Triple};
 
+use console::style;
+
 mod build;
 mod cli;
 mod runner;
@@ -115,7 +117,10 @@ fn build_everything(
     let mut builds = cpu_features
         .into_iter()
         .filter_map(move |(target_features_flags, cpu_features)| {
-            println!("    Building with features `{target_features_flags}`");
+            println!(
+                "{:>18} with {target_features_flags}",
+                style("Compiling").bold().green()
+            );
 
             let rust_flags = format!("{rust_flags} -Ctarget-feature={target_features_flags}");
             let cargo = CargoBuild::new()
@@ -233,7 +238,11 @@ fn main() -> anyhow::Result<()> {
         .rebuild_std(args.rebuild_std);
 
     for selected_package in selected_packages {
-        println!("Building package {}", selected_package.name);
+        println!(
+            "{:>12} {}",
+            style("Building").bold().green(),
+            selected_package.name
+        );
 
         let builds = build_everything(
             &target,
@@ -243,7 +252,11 @@ fn main() -> anyhow::Result<()> {
             &args.features,
         )?;
 
-        print!("    Encoding and compressing builds");
+        print!(
+            "{:>18} {} builds",
+            style("Compressing").bold().green(),
+            builds.len()
+        );
         let _ = stdout().flush();
 
         // TODO: compress the builds independently
@@ -264,11 +277,15 @@ fn main() -> anyhow::Result<()> {
         std::fs::write(&builds_path, encoded)
             .with_context(|| format!("Failed to write to `{builds_path}`"))?;
 
-        println!("    Building runner");
+        println!("{:>18} runner", style("Building").bold().green());
 
         let bin_path = runner.build(builds_path.into())?;
 
-        println!("    Done [{}]", bin_path.display());
+        println!(
+            "{:>18} ({})",
+            style("Done").bold().green(),
+            bin_path.display()
+        );
     }
 
     Ok(())

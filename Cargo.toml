@@ -18,6 +18,7 @@ humansize = { version = "2", features = ["no_alloc"] }
 clap-cargo = { version = "0.10", features = ["cargo_metadata"] }
 cargo_metadata = "0.15.2"
 target-lexicon = { version = "0.12.5", features = ["std"] }
+console = "0.15.5"
 
 [workspace]
 exclude = [
