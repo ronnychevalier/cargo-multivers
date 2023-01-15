@@ -51,7 +51,7 @@ fn main() -> Result<()> {
         use nix::unistd::fexecve;
 
         let memfd_name = CString::new("cargo-multivers")?;
-        let mut file = memfd_create(&memfd_name, MemFdCreateFlag::empty())
+        let mut file = memfd_create(&memfd_name, MemFdCreateFlag::MFD_CLOEXEC)
             .map(|fd| unsafe { File::from_raw_fd(fd) })
             .context("Failed to create an anomymous memory file")?;
         file.write_all(build.as_bytes())
