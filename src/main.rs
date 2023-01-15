@@ -21,44 +21,14 @@ use humansize::{SizeFormatter, DECIMAL};
 use target_lexicon::{Architecture, Triple};
 
 mod build;
+mod cli;
 mod runner;
 mod rustc;
 
 use crate::build::Build;
+use crate::cli::Cargo;
 use crate::runner::RunnerBuilder;
 use crate::rustc::Rustc;
-
-#[derive(clap::Args)]
-struct Args {
-    /// Build for the target triple
-    #[clap(long, value_name = "TRIPLE")]
-    target: Option<String>,
-
-    /// Rebuild the std for each feature set as well
-    #[clap(long)]
-    rebuild_std: bool,
-
-    // /// Build only the specified binary
-    // #[clap(short, long)]
-    // bin: String,
-    //
-    #[command(flatten)]
-    manifest: clap_cargo::Manifest,
-
-    #[command(flatten)]
-    workspace: clap_cargo::Workspace,
-
-    #[command(flatten)]
-    features: clap_cargo::Features,
-}
-
-impl Args {
-    pub fn target(&self) -> anyhow::Result<String> {
-        self.target
-            .as_ref()
-            .map_or_else(Rustc::default_target, |target| Ok(target.clone()))
-    }
-}
 
 fn is_valid_cpu_for_target(triple: &Triple, cpu: &str) -> bool {
     // We need to ignore some CPUs, otherwise we get errors like `LLVM ERROR: 64-bit code requested on a subtarget that doesn't support it!`
@@ -241,13 +211,6 @@ fn build_everything(
     });
 
     Ok(builds)
-}
-
-#[derive(clap::Parser)]
-#[command(name = "cargo", bin_name = "cargo")]
-enum Cargo {
-    #[command(name = "multivers", version, author, about, long_about)]
-    Multivers(Args),
 }
 
 fn main() -> anyhow::Result<()> {
