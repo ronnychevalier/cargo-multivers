@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 use std::io::stdout;
-use std::io::BufRead;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::str::FromStr;
 
 use anyhow::Context;
@@ -24,8 +22,10 @@ use humansize::{SizeFormatter, DECIMAL};
 use target_lexicon::{Architecture, Triple};
 
 mod build;
+mod rustc;
 
 use build::Build;
+use rustc::Rustc;
 
 const RUNNER_CARGO_TOML: &[u8] = include_bytes!("../multivers-runner/Cargo.toml");
 const RUNNER_MAIN: &[u8] = include_bytes!("../multivers-runner/src/main.rs");
@@ -57,83 +57,17 @@ struct Args {
 
 impl Args {
     pub fn target(&self) -> anyhow::Result<String> {
-        let rustc_v = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()))
-            .args(["rustc", "--", "-vV"])
-            .output()?;
-
-        if let Some(target) = &self.target {
-            Ok(target.clone())
-        } else {
-            rustc_v
-                .stdout
-                .lines()
-                .into_iter()
-                .filter_map(Result::ok)
-                .find_map(|line| line.strip_prefix("host: ").map(ToOwned::to_owned))
-                .ok_or_else(|| anyhow::anyhow!("Failed to detect default target"))
-        }
+        self.target
+            .as_ref()
+            .map_or_else(Rustc::default_target, |target| Ok(target.clone()))
     }
 }
 
-fn features_from_cpu(target: &str, cpu: &str) -> anyhow::Result<Vec<String>> {
-    let cfg = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()))
-        .args([
-            "rustc",
-            "--",
-            "--print",
-            "cfg",
-            "--target",
-            target,
-            &format!("-Ctarget-cpu={cpu}"),
-        ])
-        .output()?;
-
-    let features = cfg
-        .stdout
-        .lines()
-        .filter_map(Result::ok)
-        .filter_map(|line| {
-            let line = line.strip_prefix("target_feature=\"")?;
-            // Ignores lines such as llvm14-builtins-abi
-            if line.starts_with("llvm") {
-                return None;
-            }
-
-            line.strip_suffix('"').map(ToOwned::to_owned)
-        })
-        .collect();
-
-    Ok(features)
-}
-
-fn cpus_from_target(target: &str) -> anyhow::Result<Vec<String>> {
-    let cpus = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()))
-        .args(["rustc", "--", "--print", "target-cpus", "--target", target])
-        .output()?;
-
-    let cpus = cpus
-        .stdout
-        .lines()
-        .skip(1)
-        .filter_map(Result::ok)
-        .filter_map(|line| {
-            let line = line.trim();
-            if line.starts_with("native") || line.is_empty() {
-                return None;
-            }
-
-            Some(line.to_owned())
-        })
-        .collect();
-
-    Ok(cpus)
-}
-
 fn is_valid_cpu_for_target(triple: &Triple, cpu: &str) -> bool {
-    if triple.architecture == Architecture::X86_64 {
-        // We need to ignore some CPUs, otherwise we get errors like `LLVM ERROR: 64-bit code requested on a subtarget that doesn't support it!`
-        // See https://github.com/rust-lang/rust/issues/81148
-        if [
+    // We need to ignore some CPUs, otherwise we get errors like `LLVM ERROR: 64-bit code requested on a subtarget that doesn't support it!`
+    // See https://github.com/rust-lang/rust/issues/81148
+    if triple.architecture == Architecture::X86_64
+        && [
             "athlon",
             "athlon-4",
             "athlon-xp",
@@ -166,9 +100,8 @@ fn is_valid_cpu_for_target(triple: &Triple, cpu: &str) -> bool {
             "yonah",
         ]
         .contains(&cpu)
-        {
-            return false;
-        }
+    {
+        return false;
     }
 
     true
@@ -176,12 +109,12 @@ fn is_valid_cpu_for_target(triple: &Triple, cpu: &str) -> bool {
 
 fn cpu_features_from_target(target: &str) -> anyhow::Result<HashMap<String, Vec<String>>> {
     let triple = Triple::from_str(target).context("Failed to parse the target")?;
-    let features_sets: HashMap<String, Vec<String>> = cpus_from_target(target)
+    let features_sets: HashMap<String, Vec<String>> = Rustc::cpus_from_target(target)
         .context("Failed to get the set of CPUs for the target")?
         .into_iter()
         .filter(|cpu| is_valid_cpu_for_target(&triple, cpu))
         .map(|cpu| {
-            let features = features_from_cpu(target, &cpu)?;
+            let features = Rustc::features_from_cpu(target, &cpu)?;
             let features_flags = features
                 .iter()
                 .fold(String::new(), |mut features, feature| {
@@ -300,7 +233,6 @@ fn build_everything(
 
             Some(Ok(build))
         })
-        .into_iter()
         .collect::<anyhow::Result<Vec<_>>>()?;
     builds.sort_unstable_by(|build1, build2| {
         // Awful heuristic just to use in priority the build with the largest feature set supported
