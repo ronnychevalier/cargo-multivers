@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::io::stdout;
 use std::io::Write;
-use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use anyhow::Context;
@@ -22,14 +21,12 @@ use humansize::{SizeFormatter, DECIMAL};
 use target_lexicon::{Architecture, Triple};
 
 mod build;
+mod runner;
 mod rustc;
 
-use build::Build;
-use rustc::Rustc;
-
-const RUNNER_CARGO_TOML: &[u8] = include_bytes!("../multivers-runner/Cargo.toml");
-const RUNNER_MAIN: &[u8] = include_bytes!("../multivers-runner/src/main.rs");
-const RUNNER_BUILD: &[u8] = include_bytes!("build.rs");
+use crate::build::Build;
+use crate::runner::RunnerBuilder;
+use crate::rustc::Rustc;
 
 #[derive(clap::Args)]
 struct Args {
@@ -246,19 +243,6 @@ fn build_everything(
     Ok(builds)
 }
 
-fn create_runner_crate(output_directory: &Path) -> anyhow::Result<PathBuf> {
-    let root_directory = output_directory.join("multivers-runner");
-    let src_directory = root_directory.join("src");
-    let manifest_path = root_directory.join("Cargo.toml");
-
-    std::fs::create_dir_all(&src_directory)?;
-    std::fs::write(src_directory.join("main.rs"), RUNNER_MAIN)?;
-    std::fs::write(src_directory.join("build.rs"), RUNNER_BUILD)?;
-    std::fs::write(&manifest_path, RUNNER_CARGO_TOML)?;
-
-    Ok(manifest_path)
-}
-
 #[derive(clap::Parser)]
 #[command(name = "cargo", bin_name = "cargo")]
 enum Cargo {
@@ -280,6 +264,10 @@ fn main() -> anyhow::Result<()> {
         .context("Failed to execute `cargo metadata`")?;
     let (selected_packages, _) = args.workspace.partition_packages(&metadata);
     let output_directory = metadata.target_directory.join(clap::crate_name!());
+
+    let runner = RunnerBuilder::generate_crate_sources(output_directory.clone().into())
+        .context("Failed to generate the source files of the runner")?
+        .rebuild_std(args.rebuild_std);
 
     for selected_package in selected_packages {
         println!("Building package {}", selected_package.name);
@@ -315,58 +303,8 @@ fn main() -> anyhow::Result<()> {
 
         println!("    Building runner");
 
-        let runner_manifest_path = create_runner_crate(output_directory.as_std_path())
-            .context("Failed to generate the source files of the runner")?;
+        let bin_path = runner.build(builds_path.into())?;
 
-        let cargo = CargoBuild::new()
-            .release()
-            .target_dir(&output_directory)
-            .manifest_path(&runner_manifest_path)
-            .env("CARGO_MULTIVERS_BUILDS_PATH", builds_path);
-
-        let cargo = if args.rebuild_std {
-            cargo.args(["-Zbuild-std=std"])
-            // TODO: -Zbuild-std-features
-        } else {
-            cargo
-        };
-
-        let cargo = cargo
-            .exec()
-            .context("Failed to execute cargo to build the runner")?;
-
-        let bin_path = cargo
-            .into_iter()
-            .find_map(|message| {
-                let message = match message {
-                    Ok(message) => message,
-                    Err(e) => {
-                        eprintln!("{e}");
-                        return None;
-                    }
-                };
-                match message.decode() {
-                    Ok(escargot::format::Message::CompilerArtifact(artifact)) => {
-                        if !artifact.profile.test
-                            && artifact.target.crate_types == ["bin"]
-                            && artifact.target.kind == ["bin"]
-                        {
-                            Some(artifact.filenames.get(0)?.to_path_buf())
-                        } else {
-                            None
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("{e}");
-                        None
-                    }
-                    _ => {
-                        // Ignored
-                        None
-                    }
-                }
-            })
-            .ok_or_else(|| anyhow::anyhow!("Failed to build the runner"))?;
         println!("    Done [{}]", bin_path.display());
     }
 
