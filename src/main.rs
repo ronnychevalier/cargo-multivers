@@ -21,7 +21,11 @@ use humansize::{SizeFormatter, DECIMAL};
 
 use target_lexicon::{Architecture, Triple};
 
+use indicatif::ProgressBar;
+use indicatif::ProgressStyle;
+
 use console::style;
+use console::Term;
 
 mod build;
 mod cli;
@@ -110,12 +114,11 @@ struct Multivers {
     features: clap_cargo::Features,
     rebuild_std: bool,
     cpu_features: HashMap<String, Vec<String>>,
+    progress: ProgressBar,
 }
 
-impl TryFrom<Args> for Multivers {
-    type Error = anyhow::Error;
-
-    fn try_from(args: Args) -> Result<Self, Self::Error> {
+impl Multivers {
+    fn from_args(args: Args) -> anyhow::Result<Self> {
         let metadata = args
             .manifest
             .metadata()
@@ -148,24 +151,34 @@ impl TryFrom<Args> for Multivers {
             features: args.features,
             rebuild_std: args.rebuild_std,
             cpu_features,
+            progress: indicatif::ProgressBar::new(0).with_style(
+                ProgressStyle::with_template(if Term::stdout().size().1 > 80 {
+                    "{prefix:>12.cyan.bold} [{bar:57}] {pos}/{len} ({eta}) {wide_msg}"
+                } else {
+                    "{prefix:>12.cyan.bold} [{bar:57}] {pos}/{len}"
+                })?
+                .progress_chars("=> "),
+            ),
         })
     }
-}
 
-impl Multivers {
     pub fn build_package(&self, package: &Package) -> anyhow::Result<Vec<Build>> {
         let manifest_path = package.manifest_path.as_std_path().to_path_buf();
         let features_list = self.features.features.join(" ");
         let rust_flags = std::env::var("RUST_FLAGS").unwrap_or_default();
 
+        self.progress.set_length(self.cpu_features.len() as u64);
+        self.progress.set_prefix("Building");
+
         let mut builds = self
             .cpu_features
             .iter()
             .filter_map(move |(target_features_flags, cpu_features)| {
-                println!(
-                    "{:>18} with {target_features_flags}",
+                self.progress.println(format!(
+                    "{:>12} {target_features_flags}",
                     style("Compiling").bold().green()
-                );
+                ));
+                self.progress.set_message(target_features_flags.clone());
 
                 let rust_flags = format!("{rust_flags} -Ctarget-feature={target_features_flags}");
                 let cargo = CargoBuild::new()
@@ -193,9 +206,7 @@ impl Multivers {
                 let cargo = match cargo.exec() {
                     Ok(cargo) => cargo,
                     Err(e) => {
-                        eprintln!(
-                            "    Failed to build with features `{target_features_flags}`: {e}"
-                        );
+                        eprintln!("Failed to build with features `{target_features_flags}`: {e}");
                         return None;
                     }
                 };
@@ -205,7 +216,7 @@ impl Multivers {
                         Ok(message) => message,
                         Err(e) => {
                             eprintln!(
-                                "    Failed to build with features `{target_features_flags}`: {e}"
+                                "Failed to build with features `{target_features_flags}`: {e}"
                             );
                             return None;
                         }
@@ -216,6 +227,7 @@ impl Multivers {
                                 && artifact.target.crate_types == ["bin"]
                                 && artifact.target.kind == ["bin"]
                             {
+                                self.progress.inc(1);
                                 Some(artifact.filenames.get(0)?.to_path_buf())
                             } else {
                                 None
@@ -230,7 +242,7 @@ impl Multivers {
                         }
                         Err(e) => {
                             eprintln!(
-                                "    Failed to build with features `{target_features_flags}`: {e}"
+                                "Failed to build with features `{target_features_flags}`: {e}"
                             );
                             None
                         }
@@ -262,6 +274,8 @@ impl Multivers {
                 .reverse()
         });
 
+        self.progress.finish_and_clear();
+
         Ok(builds)
     }
 
@@ -270,14 +284,16 @@ impl Multivers {
 
         for selected_package in selected_packages {
             println!(
-                "{:>12} {}",
-                style("Building").bold().green(),
-                selected_package.name
+                "{:>12} {} v{} ({})",
+                style("Compiling").bold().green(),
+                selected_package.name,
+                selected_package.version,
+                self.metadata.workspace_root
             );
 
             let builds = self.build_package(selected_package)?;
             print!(
-                "{:>18} {} builds",
+                "{:>12} {} builds",
                 style("Compressing").bold().green(),
                 builds.len()
             );
@@ -301,13 +317,13 @@ impl Multivers {
             std::fs::write(&builds_path, encoded)
                 .with_context(|| format!("Failed to write to `{}`", builds_path.display()))?;
 
-            println!("{:>18} runner", style("Building").bold().green());
+            println!("{:>12} runner", style("Compiling").bold().green());
 
             let bin_path = self.runner.build(builds_path)?;
 
             println!(
-                "{:>18} ({})",
-                style("Done").bold().green(),
+                "{:>12} ({})",
+                style("Finished").bold().green(),
                 bin_path.display()
             );
         }
@@ -319,7 +335,7 @@ impl Multivers {
 fn main() -> anyhow::Result<()> {
     let Cargo::Multivers(args) = Cargo::parse();
 
-    let multivers = Multivers::try_from(args)?;
+    let multivers = Multivers::from_args(args)?;
     multivers.build()?;
 
     Ok(())
