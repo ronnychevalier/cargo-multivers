@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::io::stdout;
 use std::io::Write;
@@ -27,6 +28,8 @@ use indicatif::ProgressStyle;
 use console::style;
 use console::Term;
 
+use cli::Print;
+
 mod build;
 mod cli;
 mod runner;
@@ -37,7 +40,7 @@ use crate::cli::{Args, Cargo};
 use crate::runner::RunnerBuilder;
 use crate::rustc::Rustc;
 
-fn is_valid_cpu_for_target(triple: &Triple, cpu: &str) -> bool {
+fn is_cpu_for_target_valid(triple: &Triple, cpu: &str) -> bool {
     // We need to ignore some CPUs, otherwise we get errors like `LLVM ERROR: 64-bit code requested on a subtarget that doesn't support it!`
     // See https://github.com/rust-lang/rust/issues/81148
     if triple.architecture == Architecture::X86_64
@@ -81,14 +84,24 @@ fn is_valid_cpu_for_target(triple: &Triple, cpu: &str) -> bool {
     true
 }
 
-fn cpu_features_from_target(target: &str) -> anyhow::Result<HashMap<String, Vec<String>>> {
+fn cpu_features(args: &Args, target: &str) -> anyhow::Result<HashMap<String, Vec<String>>> {
     let triple = Triple::from_str(target).context("Failed to parse the target")?;
-    let features_sets: HashMap<String, Vec<String>> = Rustc::cpus_from_target(target)
+    Rustc::cpus_from_target(target)
         .context("Failed to get the set of CPUs for the target")?
         .into_iter()
-        .filter(|cpu| is_valid_cpu_for_target(&triple, cpu))
-        .map(|cpu| {
-            let features = Rustc::features_from_cpu(target, &cpu)?;
+        .filter(|cpu| is_cpu_for_target_valid(&triple, cpu))
+        .filter_map(|cpu| Rustc::features_from_cpu(target, &cpu).ok())
+        .filter_map(|mut features| {
+            for exclude in args.exclude_cpu_features.iter().flatten() {
+                features.remove(exclude);
+            }
+            if features.is_empty() {
+                return None;
+            }
+
+            Some(features)
+        })
+        .map(|features| {
             let features_flags = features
                 .iter()
                 .fold(String::new(), |mut features, feature| {
@@ -98,11 +111,9 @@ fn cpu_features_from_target(target: &str) -> anyhow::Result<HashMap<String, Vec<
                     features
                 });
             let features_flags = features_flags.trim_end_matches(',');
-            Ok((features_flags.to_owned(), features))
+            Ok((features_flags.to_owned(), features.into_iter().collect()))
         })
-        .collect::<anyhow::Result<HashMap<String, Vec<String>>>>()?;
-
-    Ok(features_sets)
+        .collect::<anyhow::Result<HashMap<String, Vec<String>>>>()
 }
 
 struct Multivers {
@@ -130,7 +141,7 @@ impl Multivers {
         // See https://github.com/rust-lang/cargo/issues/4423
         let target = args.target()?;
 
-        let cpu_features = cpu_features_from_target(&target)
+        let cpu_features = cpu_features(&args, &target)
             .context("Failed to get the set of CPU features for the target")?;
 
         let output_directory = metadata
@@ -334,6 +345,23 @@ impl Multivers {
 
 fn main() -> anyhow::Result<()> {
     let Cargo::Multivers(args) = Cargo::parse();
+
+    if matches!(args.print, Some(Print::CpuFeatures)) {
+        let target = args.target()?;
+
+        let cpu_features = cpu_features(&args, &target)
+            .context("Failed to get the set of CPU features for the target")?;
+
+        for feature in cpu_features
+            .into_iter()
+            .flat_map(|(_, features)| features)
+            .collect::<BTreeSet<_>>()
+        {
+            println!("{feature}");
+        }
+
+        return Ok(());
+    }
 
     let multivers = Multivers::from_args(args)?;
     multivers.build()?;

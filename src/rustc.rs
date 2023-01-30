@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::io::BufRead;
 use std::process::Command;
 
@@ -25,7 +26,7 @@ impl Rustc {
     }
 
     /// Returns all CPU features supported by a given CPU on a target
-    pub fn features_from_cpu(target: &str, cpu: &str) -> anyhow::Result<Vec<String>> {
+    pub fn features_from_cpu(target: &str, cpu: &str) -> anyhow::Result<HashSet<String>> {
         let cfg = Self::command()
             .args([
                 "--print=cfg",
@@ -87,6 +88,13 @@ mod tests {
     use super::Rustc;
 
     #[test]
+    fn test_finds_rustc_without_env_cargo() {
+        std::env::remove_var("CARGO");
+        let target = Rustc::default_target().unwrap();
+        Triple::from_str(&target).unwrap();
+    }
+
+    #[test]
     fn test_default_target_valid() {
         let target = Rustc::default_target().unwrap();
         Triple::from_str(&target).unwrap();
@@ -97,5 +105,13 @@ mod tests {
         let target = Rustc::default_target().unwrap();
         let cpus = Rustc::cpus_from_target(&target).unwrap();
         assert!(!cpus.is_empty());
+    }
+
+    #[test]
+    fn test_features_from_cpu_not_empty() {
+        let target = Rustc::default_target().unwrap();
+        let cpus = Rustc::cpus_from_target(&target).unwrap();
+        let features = Rustc::features_from_cpu(&target, cpus.first().unwrap()).unwrap();
+        assert!(!features.is_empty());
     }
 }

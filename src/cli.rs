@@ -7,6 +7,11 @@ pub enum Cargo {
     Multivers(Args),
 }
 
+#[derive(clap::ValueEnum, Clone, Copy)]
+pub enum Print {
+    CpuFeatures,
+}
+
 #[derive(clap::Args)]
 pub struct Args {
     /// Build for the target triple
@@ -16,6 +21,19 @@ pub struct Args {
     /// Rebuild the std for each feature set as well
     #[clap(long)]
     pub rebuild_std: bool,
+
+    /// Print information on stdout
+    #[clap(long, value_name = "INFORMATION")]
+    pub print: Option<Print>,
+
+    /// Comma-separated list of CPU features to exclude from the builds
+    #[clap(
+        long,
+        use_value_delimiter = true,
+        value_delimiter = ',',
+        value_name = "CPU-FEATURES"
+    )]
+    pub exclude_cpu_features: Option<Vec<String>>,
 
     #[command(flatten)]
     pub manifest: clap_cargo::Manifest,
