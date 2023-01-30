@@ -20,6 +20,7 @@ cargo_metadata = "0.15.2"
 target-lexicon = { version = "0.12.5", features = ["std"] }
 console = "0.15.5"
 indicatif = "0.17.3"
+rayon = "1.6.1"
 
 [workspace]
 exclude = [

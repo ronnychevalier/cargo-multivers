@@ -28,7 +28,8 @@ use indicatif::ProgressStyle;
 use console::style;
 use console::Term;
 
-use cli::Print;
+use rayon::prelude::IntoParallelRefIterator;
+use rayon::prelude::ParallelIterator;
 
 mod build;
 mod cli;
@@ -36,7 +37,7 @@ mod runner;
 mod rustc;
 
 use crate::build::Build;
-use crate::cli::{Args, Cargo};
+use crate::cli::{Args, Cargo, Print};
 use crate::runner::RunnerBuilder;
 use crate::rustc::Rustc;
 
@@ -88,7 +89,7 @@ fn cpu_features(args: &Args, target: &str) -> anyhow::Result<HashMap<String, Vec
     let triple = Triple::from_str(target).context("Failed to parse the target")?;
     Rustc::cpus_from_target(target)
         .context("Failed to get the set of CPUs for the target")?
-        .into_iter()
+        .par_iter()
         .filter(|cpu| is_cpu_for_target_valid(&triple, cpu))
         .filter_map(|cpu| Rustc::features_from_cpu(target, &cpu).ok())
         .filter_map(|mut features| {
