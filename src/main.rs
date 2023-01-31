@@ -353,12 +353,13 @@ fn main() -> anyhow::Result<()> {
         let cpu_features = cpu_features(&args, &target)
             .context("Failed to get the set of CPU features for the target")?;
 
+        let mut stdout = std::io::stdout().lock();
         for feature in cpu_features
             .into_iter()
             .flat_map(|(_, features)| features)
             .collect::<BTreeSet<_>>()
         {
-            println!("{feature}");
+            let _ = writeln!(stdout, "{feature}");
         }
 
         return Ok(());
