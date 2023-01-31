@@ -68,6 +68,7 @@ dependencies = [
  "flate2",
  "humansize",
  "indicatif",
+ "once_cell",
  "rayon",
  "target-lexicon",
 ]

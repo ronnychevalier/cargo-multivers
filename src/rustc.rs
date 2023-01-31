@@ -1,16 +1,31 @@
 use std::collections::HashSet;
 use std::io::BufRead;
+use std::path::PathBuf;
 use std::process::Command;
+
+use once_cell::sync::Lazy;
+
+// We do not call "cargo rustc" (which would be simpler),
+// because it takes too much time to execute each time.
+// Calling rustc directly is faster.
+static RUSTC: Lazy<PathBuf> = Lazy::new(|| {
+    std::env::var_os("CARGO")
+        .map(PathBuf::from)
+        .and_then(|path| {
+            path.parent().map(|bin| {
+                bin.join("rustc")
+                    .with_extension(std::env::consts::EXE_EXTENSION)
+            })
+        })
+        .unwrap_or_else(|| "rustc".into())
+});
 
 /// Wrapper around the `rustc` command
 pub struct Rustc;
 
 impl Rustc {
     fn command() -> Command {
-        let mut command = Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()));
-        command.args(["rustc", "--"]);
-
-        command
+        Command::new(RUSTC.as_path())
     }
 
     /// Returns the default target that rustc uses to build if none is provided (the host)
