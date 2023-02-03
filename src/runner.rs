@@ -40,9 +40,10 @@ impl RunnerBuilder {
     }
 
     /// Builds a runner that includes the given builds
-    pub fn build(&self, builds_path: PathBuf) -> anyhow::Result<PathBuf> {
+    pub fn build(&self, target: &str, builds_path: PathBuf) -> anyhow::Result<PathBuf> {
         let cargo = CargoBuild::new()
             .release()
+            .target(target)
             .target_dir(&self.output_directory)
             .manifest_path(&self.manifest_path)
             .env("CARGO_MULTIVERS_BUILDS_PATH", builds_path);

@@ -314,7 +314,7 @@ impl Multivers {
 
             println!("{:>12} runner", style("Compiling").bold().green());
 
-            let bin_path = self.runner.build(builds_path)?;
+            let bin_path = self.runner.build(&self.target, builds_path)?;
 
             println!(
                 "{:>12} ({})",
