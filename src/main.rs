@@ -1,6 +1,5 @@
 use std::collections::BTreeSet;
 use std::collections::HashMap;
-use std::io::stdout;
 use std::io::Write;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -11,14 +10,9 @@ use bincode::config;
 
 use cargo_metadata::{Metadata, Package};
 
-use flate2::write::DeflateEncoder;
-use flate2::Compression;
-
 use clap::Parser;
 
 use escargot::CargoBuild;
-
-use humansize::{SizeFormatter, DECIMAL};
 
 use target_lexicon::{Architecture, Triple};
 
@@ -91,7 +85,7 @@ fn cpu_features(args: &Args, target: &str) -> anyhow::Result<HashMap<String, Vec
         .context("Failed to get the set of CPUs for the target")?
         .par_iter()
         .filter(|cpu| is_cpu_for_target_valid(&triple, cpu))
-        .filter_map(|cpu| Rustc::features_from_cpu(target, &cpu).ok())
+        .filter_map(|cpu| Rustc::features_from_cpu(target, cpu).ok())
         .filter_map(|mut features| {
             for exclude in args.exclude_cpu_features.iter().flatten() {
                 features.remove(exclude);
@@ -272,7 +266,10 @@ impl Multivers {
                     Err(e) => return Some(Err(e)),
                 };
 
-                let build = Build::new(bytes, cpu_features.clone());
+                let build = match Build::compress(&bytes, cpu_features.clone()) {
+                    Ok(build) => build,
+                    Err(e) => return Some(Err(e)),
+                };
 
                 Some(Ok(build))
             })
@@ -304,23 +301,9 @@ impl Multivers {
             );
 
             let builds = self.build_package(selected_package)?;
-            print!(
-                "{:>12} {} builds",
-                style("Compressing").bold().green(),
-                builds.len()
-            );
-            let _ = stdout().flush();
 
-            // TODO: compress the builds independently
-            // to avoid the need to decompress them all when loading
-            // and stop decompressing as soon as one matches
-            let config = config::standard();
-            let mut encoder = DeflateEncoder::new(Vec::new(), Compression::best());
-            bincode::encode_into_std_write(builds, &mut encoder, config)
+            let encoded = bincode::encode_to_vec(builds, config::standard())
                 .context("Failed to encode the builds")?;
-            let encoded = encoder.finish().context("Failed to compress the builds")?;
-
-            println!(" [{}]", SizeFormatter::new(encoded.len(), DECIMAL));
 
             let package_output_directory = self.output_directory.join(&selected_package.name);
             std::fs::create_dir_all(&package_output_directory)

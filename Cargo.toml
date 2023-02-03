@@ -14,7 +14,6 @@ escargot = "0.5.7"
 clap = { version = "4.0.32", features = ["derive", "cargo"] }
 bincode = { version = "2.0.0-rc.2", default-features = false, features = ["std", "derive"] }
 flate2 = "1.0.25"
-humansize = { version = "2", features = ["no_alloc"] }
 clap-cargo = { version = "0.10", features = ["cargo_metadata"] }
 cargo_metadata = "0.15.2"
 target-lexicon = { version = "0.12.5", features = ["std"] }

@@ -7,8 +7,6 @@ use anyhow::{Context, Result};
 
 use bincode::config;
 
-use flate2::read::DeflateDecoder;
-
 mod build;
 
 use build::Build;
@@ -21,9 +19,8 @@ fn main() -> Result<()> {
         .collect();
 
     let config = config::standard();
-    let mut decoder = DeflateDecoder::new(BUILDS);
-    let builds: Vec<Build> = bincode::decode_from_std_read(&mut decoder, config)
-        .context("Failed to decode the builds")?;
+    let (builds, _): (Vec<Build>, _) =
+        bincode::decode_from_slice(BUILDS, config).context("Failed to decode the builds")?;
 
     let build = builds
         .into_iter()
@@ -37,6 +34,7 @@ fn main() -> Result<()> {
         .ok_or_else(|| {
             anyhow::anyhow!("Failed to find a build satisfying the current CPU's features")
         })?;
+    let build = build.decompress().context("Failed to decompress build")?;
 
     // On Linux, we first try with `memfd_create` and `execveat` to perform in-memory execution without
     // relying on temporary files.
@@ -54,7 +52,7 @@ fn main() -> Result<()> {
         let mut file = memfd_create(&memfd_name, MemFdCreateFlag::MFD_CLOEXEC)
             .map(|fd| unsafe { File::from_raw_fd(fd) })
             .context("Failed to create an anomymous memory file")?;
-        file.write_all(build.as_bytes())
+        file.write_all(&build)
             .context("Failed to write the build to an anomymous memory file")?;
 
         let args = std::env::args_os()
@@ -84,7 +82,7 @@ fn main() -> Result<()> {
         permissions.set_mode(0o700);
     }
 
-    file.write_all(build.as_bytes()).with_context(|| {
+    file.write_all(&build).with_context(|| {
         format!(
             "Failed to write the build to the temporary file `{}`",
             file.path().display()
