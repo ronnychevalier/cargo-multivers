@@ -159,7 +159,7 @@ impl Multivers {
             cpu_features,
             progress: indicatif::ProgressBar::new(0).with_style(
                 ProgressStyle::with_template(if Term::stdout().size().1 > 80 {
-                    "{prefix:>12.cyan.bold} [{bar:57}] {pos}/{len} ({eta}) {wide_msg}"
+                    "{prefix:>12.cyan.bold} [{bar:57}] {pos}/{len} (time remaining {eta}) {wide_msg}"
                 } else {
                     "{prefix:>12.cyan.bold} [{bar:57}] {pos}/{len}"
                 })?
@@ -184,7 +184,6 @@ impl Multivers {
                     "{:>12} {target_features_flags}",
                     style("Compiling").bold().green()
                 ));
-                self.progress.set_message(target_features_flags.clone());
 
                 let rust_flags = format!("{rust_flags} -Ctarget-feature={target_features_flags}");
                 let cargo = CargoBuild::new()
