@@ -5,6 +5,7 @@ use anyhow::Context;
 use escargot::CargoBuild;
 
 const RUNNER_CARGO_TOML: &[u8] = include_bytes!("../multivers-runner/Cargo.toml");
+const RUNNER_CARGO_LOCK: &[u8] = include_bytes!("../multivers-runner/Cargo.lock");
 const RUNNER_MAIN: &[u8] = include_bytes!("../multivers-runner/src/main.rs");
 const RUNNER_BUILD: &[u8] = include_bytes!("build.rs");
 
@@ -20,11 +21,13 @@ impl RunnerBuilder {
         let root_directory = output_directory.join("multivers-runner");
         let src_directory = root_directory.join("src");
         let manifest_path = root_directory.join("Cargo.toml");
+        let lock_path = root_directory.join("Cargo.lock");
 
         std::fs::create_dir_all(&src_directory)?;
         std::fs::write(src_directory.join("main.rs"), RUNNER_MAIN)?;
         std::fs::write(src_directory.join("build.rs"), RUNNER_BUILD)?;
         std::fs::write(&manifest_path, RUNNER_CARGO_TOML)?;
+        std::fs::write(&lock_path, RUNNER_CARGO_LOCK)?;
 
         Ok(Self {
             output_directory,
