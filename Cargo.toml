@@ -6,7 +6,7 @@ readme = "README.md"
 license = "MIT OR Apache-2.0"
 categories = ["hardware-support", "command-line-utilities", "development-tools::cargo-plugins"]
 description = "Cargo subcommand to build a portable optimized binary"
-rust-version = "1.60"
+rust-version = "1.64"
 
 [dependencies]
 anyhow = "1.0.68"
