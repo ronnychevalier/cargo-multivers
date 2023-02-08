@@ -1,6 +1,7 @@
 #![feature(stdsimd)]
 
 use std::io::Write;
+use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{Context, Result};
@@ -35,6 +36,12 @@ fn main() -> Result<()> {
         })?;
     let build = build.decompress().context("Failed to decompress build")?;
 
+    let exe_filename = std::env::args_os()
+        .next()
+        .map(PathBuf::from)
+        .and_then(|path| path.file_name().map(ToOwned::to_owned))
+        .unwrap_or_default();
+
     // On Linux, we first try with `memfd_create` and `execveat` to perform in-memory execution without
     // relying on temporary files.
     #[cfg(target_os = "linux")]
@@ -47,7 +54,7 @@ fn main() -> Result<()> {
         use nix::sys::memfd::{memfd_create, MemFdCreateFlag};
         use nix::unistd::fexecve;
 
-        let memfd_name = CString::new("cargo-multivers")?;
+        let memfd_name = CString::new(exe_filename.to_str().unwrap_or("cargo-multivers"))?;
         let mut file = memfd_create(&memfd_name, MemFdCreateFlag::MFD_CLOEXEC)
             .map(|fd| unsafe { File::from_raw_fd(fd) })
             .context("Failed to create an anomymous memory file")?;
@@ -69,7 +76,10 @@ fn main() -> Result<()> {
         // If fexecve failed, let's try with a temporary file.
     }
 
-    let mut file = tempfile::NamedTempFile::new().context("Failed to create a temporary file")?;
+    let mut file = tempfile::Builder::new()
+        .suffix(&exe_filename)
+        .tempfile()
+        .context("Failed to create a temporary file")?;
     // On Linux, execution with a temporary file will likely fail since it is common for `/tmp` to be mounted with noexec.
     #[cfg(unix)]
     {
