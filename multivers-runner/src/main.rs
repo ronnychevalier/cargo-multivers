@@ -18,9 +18,8 @@ fn main() -> Result<()> {
         .filter_map(|(feature, supported)| supported.then_some(feature))
         .collect();
 
-    let config = config::standard();
-    let (builds, _): (Vec<Build>, _) =
-        bincode::decode_from_slice(BUILDS, config).context("Failed to decode the builds")?;
+    let (builds, _): (Vec<Build>, _) = bincode::decode_from_slice(BUILDS, config::standard())
+        .context("Failed to decode the builds")?;
 
     let build = builds
         .into_iter()
@@ -92,7 +91,7 @@ fn main() -> Result<()> {
     let path = file.into_temp_path();
 
     let exit_status = Command::new(&path)
-        .args(std::env::args_os().next())
+        .args(std::env::args_os().skip(1))
         .status()
         .with_context(|| format!("Failed to execute temporary file `{}`", path.display()))?;
 
