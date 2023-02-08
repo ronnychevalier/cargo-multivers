@@ -27,7 +27,7 @@ impl RunnerBuilder {
         std::fs::write(src_directory.join("main.rs"), RUNNER_MAIN)?;
         std::fs::write(src_directory.join("build.rs"), RUNNER_BUILD)?;
         std::fs::write(&manifest_path, RUNNER_CARGO_TOML)?;
-        std::fs::write(&lock_path, RUNNER_CARGO_LOCK)?;
+        std::fs::write(lock_path, RUNNER_CARGO_LOCK)?;
 
         Ok(Self {
             output_directory,

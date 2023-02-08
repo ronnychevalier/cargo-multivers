@@ -1,5 +1,4 @@
-use std::collections::BTreeSet;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -79,7 +78,7 @@ fn is_cpu_for_target_valid(triple: &Triple, cpu: &str) -> bool {
     true
 }
 
-fn cpu_features(args: &Args, target: &str) -> anyhow::Result<HashMap<String, Vec<String>>> {
+fn cpu_features(args: &Args, target: &str) -> anyhow::Result<BTreeMap<String, Vec<String>>> {
     let triple = Triple::from_str(target).context("Failed to parse the target")?;
     Rustc::cpus_from_target(target)
         .context("Failed to get the set of CPUs for the target")?
@@ -108,7 +107,7 @@ fn cpu_features(args: &Args, target: &str) -> anyhow::Result<HashMap<String, Vec
             let features_flags = features_flags.trim_end_matches(',');
             Ok((features_flags.to_owned(), features.into_iter().collect()))
         })
-        .collect::<anyhow::Result<HashMap<String, Vec<String>>>>()
+        .collect::<anyhow::Result<BTreeMap<String, Vec<String>>>>()
 }
 
 struct Multivers {
@@ -119,7 +118,7 @@ struct Multivers {
     output_directory: PathBuf,
     features: clap_cargo::Features,
     rebuild_std: bool,
-    cpu_features: HashMap<String, Vec<String>>,
+    cpu_features: BTreeMap<String, Vec<String>>,
     progress: ProgressBar,
 }
 

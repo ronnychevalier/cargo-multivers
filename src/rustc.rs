@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 use std::io::BufRead;
 use std::path::PathBuf;
 use std::process::Command;
@@ -41,7 +41,7 @@ impl Rustc {
     }
 
     /// Returns all CPU features supported by a given CPU on a target
-    pub fn features_from_cpu(target: &str, cpu: &str) -> anyhow::Result<HashSet<String>> {
+    pub fn features_from_cpu(target: &str, cpu: &str) -> anyhow::Result<BTreeSet<String>> {
         let cfg = Self::command()
             .args([
                 "--print=cfg",
