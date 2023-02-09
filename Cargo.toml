@@ -1,12 +1,14 @@
 [package]
 name = "cargo-multivers"
 version = "0.1.0"
+description = "Cargo subcommand to build a portable optimized binary"
 edition = "2021"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 categories = ["hardware-support", "command-line-utilities", "development-tools::cargo-plugins"]
-description = "Cargo subcommand to build a portable optimized binary"
+keywords = ["performance", "optimization", "cargo", "cpu", "features"]
 rust-version = "1.64"
+repository = "https://github.com/ronnychevalier/cargo-multivers"
 
 [dependencies]
 anyhow = "1.0.68"
