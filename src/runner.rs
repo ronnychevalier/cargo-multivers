@@ -4,7 +4,7 @@ use anyhow::Context;
 
 use escargot::CargoBuild;
 
-const RUNNER_CARGO_TOML: &[u8] = include_bytes!("../multivers-runner/Cargo.toml");
+const RUNNER_CARGO_TOML: &[u8] = include_bytes!("../multivers-runner/Cargo.toml.template");
 const RUNNER_CARGO_LOCK: &[u8] = include_bytes!("../multivers-runner/Cargo.lock");
 const RUNNER_MAIN: &[u8] = include_bytes!("../multivers-runner/src/main.rs");
 const RUNNER_BUILD: &[u8] = include_bytes!("build.rs");

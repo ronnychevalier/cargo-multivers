@@ -17,6 +17,7 @@ pub struct Build {
 }
 
 impl Build {
+    #[allow(unused)]
     pub fn compress(build: &[u8], features: Vec<String>) -> anyhow::Result<Self> {
         let mut encoder = DeflateEncoder::new(Vec::new(), Compression::best());
         encoder.write_all(build)?;
@@ -32,6 +33,7 @@ impl Build {
         self.features.as_ref()
     }
 
+    #[allow(unused)]
     pub fn decompress(self) -> anyhow::Result<Box<[u8]>> {
         let mut build = Vec::with_capacity(self.compressed_build.len());
         let mut decoder = DeflateDecoder::new(self.compressed_build.as_ref());

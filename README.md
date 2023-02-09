@@ -2,8 +2,6 @@
 
 Cargo subcommand to build multiple versions of the same binary to generate a portable optimized binary.
 
-:construction: This is a WIP. It has not been published yet. :construction:
-
 If you want to apply this approach only at the function level, take a look at the [multiversion](https://crates.io/crates/multiversion) crate.
 
 ## Installation

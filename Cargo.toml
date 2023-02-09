@@ -9,6 +9,12 @@ categories = ["hardware-support", "command-line-utilities", "development-tools::
 keywords = ["performance", "optimization", "cargo", "cpu", "features"]
 rust-version = "1.64"
 repository = "https://github.com/ronnychevalier/cargo-multivers"
+include = [
+    "/src/*",
+    "/LICENSE*",
+    "/multivers-runner/src/main.rs",
+    "/multivers-runner/Cargo.*",
+]
 
 [dependencies]
 anyhow = "1.0.68"
