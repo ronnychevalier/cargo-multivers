@@ -2,6 +2,7 @@
 
 [![Latest Version]][crates.io]
 ![MSRV][rustc-image]
+![CI status][ci-image]
 ![Apache 2.0 OR MIT licensed][license-image]
 
 Cargo subcommand to build multiple versions of the same binary, each with a different CPU features set, merged into a single portable optimized binary.
@@ -62,5 +63,6 @@ additional terms or conditions.
 
 [Latest Version]: https://img.shields.io/crates/v/cargo-multivers.svg
 [crates.io]: https://crates.io/crates/cargo-multivers
+[ci-image]: https://img.shields.io/github/actions/workflow/status/ronnychevalier/cargo-multivers/ci.yml
 [rustc-image]: https://img.shields.io/badge/rustc-1.64+-blue.svg
 [license-image]: https://img.shields.io/crates/l/cargo-multivers.svg
