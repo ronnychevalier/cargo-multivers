@@ -20,8 +20,6 @@ include = [
 anyhow = "1.0.68"
 escargot = "0.5.7"
 clap = { version = "4.0.32", features = ["derive", "cargo"] }
-bincode = { version = "2.0.0-rc.2", default-features = false, features = ["std", "derive"] }
-flate2 = "1.0.25"
 clap-cargo = { version = "0.10", features = ["cargo_metadata"] }
 cargo_metadata = "0.15.2"
 target-lexicon = { version = "0.12.5", features = ["std"] }
@@ -29,6 +27,8 @@ console = "0.15.5"
 indicatif = "0.17.3"
 rayon = "1.6.1"
 once_cell = { version = "1.17.0", default-features = false, features = ["std"] }
+serde = { version = "1", features = ["derive"] }
+rmp-serde = "1.1"
 
 [workspace]
 exclude = [

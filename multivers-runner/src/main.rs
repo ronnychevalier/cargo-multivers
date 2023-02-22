@@ -6,29 +6,24 @@ use std::process::Command;
 
 use anyhow::{Context, Result};
 
-use bincode::config;
-
 mod build;
 
 use build::Build;
 
-const BUILDS: &[u8] = include_bytes!(env!("CARGO_MULTIVERS_BUILDS_PATH"));
+include!(concat!(env!("OUT_DIR"), "/builds.rs"));
 
 fn main() -> Result<()> {
     let supported_features: Vec<&str> = std_detect::detect::features()
         .filter_map(|(feature, supported)| supported.then_some(feature))
         .collect();
 
-    let (builds, _): (Vec<Build>, _) = bincode::decode_from_slice(BUILDS, config::standard())
-        .context("Failed to decode the builds")?;
-
-    let build = builds
+    let build = BUILDS
         .into_iter()
         .find_map(|build| {
             build
                 .required_cpu_features()
                 .iter()
-                .all(|feature| supported_features.contains(&feature.as_str()))
+                .all(|feature| supported_features.contains(feature))
                 .then_some(build)
         })
         .ok_or_else(|| {

@@ -7,10 +7,15 @@ publish = false
 
 [dependencies]
 anyhow = "1.0.68"
-bincode = { version = "2.0.0-rc.2", default-features = false, features = ["std", "derive"] }
 flate2 = "1.0.25"
 std_detect = { git = "https://github.com/rust-lang/stdarch", rev = "3a96d41a06b2d939fa743d7010f911aa1afcba39", package = "std_detect" }
 tempfile = "3.3.0"
+
+[build-dependencies]
+serde = { version = "1", features = ["derive"] }
+rmp-serde = "1.1"
+flate2 = "1.0.25"
+quote = "1.0"
 
 [profile.release]
 lto = true

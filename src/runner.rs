@@ -6,8 +6,9 @@ use escargot::CargoBuild;
 
 const RUNNER_CARGO_TOML: &[u8] = include_bytes!("../multivers-runner/Cargo.toml.template");
 const RUNNER_CARGO_LOCK: &[u8] = include_bytes!("../multivers-runner/Cargo.lock");
+const RUNNER_BUILD_SCRIPT: &[u8] = include_bytes!("../multivers-runner/build.rs");
 const RUNNER_MAIN: &[u8] = include_bytes!("../multivers-runner/src/main.rs");
-const RUNNER_BUILD: &[u8] = include_bytes!("build.rs");
+const RUNNER_BUILD: &[u8] = include_bytes!("../multivers-runner/src/build.rs");
 
 pub struct RunnerBuilder {
     output_directory: PathBuf,
@@ -21,13 +22,13 @@ impl RunnerBuilder {
         let root_directory = output_directory.join("multivers-runner");
         let src_directory = root_directory.join("src");
         let manifest_path = root_directory.join("Cargo.toml");
-        let lock_path = root_directory.join("Cargo.lock");
 
         std::fs::create_dir_all(&src_directory)?;
         std::fs::write(src_directory.join("main.rs"), RUNNER_MAIN)?;
         std::fs::write(src_directory.join("build.rs"), RUNNER_BUILD)?;
         std::fs::write(&manifest_path, RUNNER_CARGO_TOML)?;
-        std::fs::write(lock_path, RUNNER_CARGO_LOCK)?;
+        std::fs::write(root_directory.join("Cargo.lock"), RUNNER_CARGO_LOCK)?;
+        std::fs::write(root_directory.join("build.rs"), RUNNER_BUILD_SCRIPT)?;
 
         Ok(Self {
             output_directory,
@@ -49,7 +50,7 @@ impl RunnerBuilder {
             .target(target)
             .target_dir(&self.output_directory)
             .manifest_path(&self.manifest_path)
-            .env("CARGO_MULTIVERS_BUILDS_PATH", builds_path);
+            .env("MULTIVERS_BUILDS_DESCRIPTION_PATH", builds_path);
 
         let cargo = if self.rebuild_std {
             cargo.args(["-Zbuild-std=std"])

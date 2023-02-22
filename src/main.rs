@@ -5,13 +5,13 @@ use std::str::FromStr;
 
 use anyhow::Context;
 
-use bincode::config;
-
 use cargo_metadata::{Metadata, Package};
 
 use clap::Parser;
 
 use escargot::CargoBuild;
+
+use serde::Serialize;
 
 use target_lexicon::{Architecture, Triple};
 
@@ -24,12 +24,10 @@ use console::Term;
 use rayon::prelude::IntoParallelRefIterator;
 use rayon::prelude::ParallelIterator;
 
-mod build;
 mod cli;
 mod runner;
 mod rustc;
 
-use crate::build::Build;
 use crate::cli::{Args, Cargo, Print};
 use crate::runner::RunnerBuilder;
 use crate::rustc::Rustc;
@@ -110,6 +108,17 @@ fn cpu_features(args: &Args, target: &str) -> anyhow::Result<BTreeMap<String, Ve
         .collect::<anyhow::Result<BTreeMap<String, Vec<String>>>>()
 }
 
+#[derive(Serialize)]
+struct BuildDescription {
+    path: PathBuf,
+    features: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct BuildsDescription {
+    builds: Vec<BuildDescription>,
+}
+
 struct Multivers {
     metadata: Metadata,
     target: String,
@@ -167,7 +176,7 @@ impl Multivers {
         })
     }
 
-    pub fn build_package(&self, package: &Package) -> anyhow::Result<Vec<Build>> {
+    pub fn build_package(&self, package: &Package) -> anyhow::Result<BuildsDescription> {
         let manifest_path = package.manifest_path.as_std_path().to_path_buf();
         let features_list = self.features.features.join(" ");
         let rust_flags = std::env::var("RUST_FLAGS").unwrap_or_default();
@@ -257,16 +266,9 @@ impl Multivers {
                     }
                 })?;
 
-                let bytes = match std::fs::read(&bin_path).with_context(|| {
-                    format!("Failed to read the executable `{}`", bin_path.display())
-                }) {
-                    Ok(bytes) => bytes,
-                    Err(e) => return Some(Err(e)),
-                };
-
-                let build = match Build::compress(&bytes, cpu_features.clone()) {
-                    Ok(build) => build,
-                    Err(e) => return Some(Err(e)),
+                let build = BuildDescription {
+                    path: bin_path,
+                    features: cpu_features.clone(),
                 };
 
                 Some(Ok(build))
@@ -274,16 +276,12 @@ impl Multivers {
             .collect::<anyhow::Result<Vec<_>>>()?;
         builds.sort_unstable_by(|build1, build2| {
             // Awful heuristic just to use in priority the build with the largest feature set supported
-            build1
-                .required_cpu_features()
-                .len()
-                .cmp(&build2.required_cpu_features().len())
-                .reverse()
+            build1.features.len().cmp(&build2.features.len()).reverse()
         });
 
         self.progress.finish_and_clear();
 
-        Ok(builds)
+        Ok(BuildsDescription { builds })
     }
 
     pub fn build(&self) -> anyhow::Result<()> {
@@ -300,13 +298,13 @@ impl Multivers {
 
             let builds = self.build_package(selected_package)?;
 
-            let encoded = bincode::encode_to_vec(builds, config::standard())
-                .context("Failed to encode the builds")?;
+            let encoded =
+                rmp_serde::to_vec_named(&builds).context("Failed to encode the builds")?;
 
             let package_output_directory = self.output_directory.join(&selected_package.name);
             std::fs::create_dir_all(&package_output_directory)
                 .context("Failed to create temporary output directory")?;
-            let builds_path = package_output_directory.join("builds.bin");
+            let builds_path = package_output_directory.join("builds.msgpack");
             std::fs::write(&builds_path, encoded)
                 .with_context(|| format!("Failed to write to `{}`", builds_path.display()))?;
 
