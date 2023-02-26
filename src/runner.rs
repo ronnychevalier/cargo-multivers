@@ -1,3 +1,4 @@
+use std::ffi::OsStr;
 use std::path::PathBuf;
 
 use anyhow::Context;
@@ -13,7 +14,6 @@ const RUNNER_BUILD: &[u8] = include_bytes!("../multivers-runner/src/build.rs");
 pub struct RunnerBuilder {
     output_directory: PathBuf,
     manifest_path: PathBuf,
-    rebuild_std: bool,
 }
 
 impl RunnerBuilder {
@@ -33,31 +33,23 @@ impl RunnerBuilder {
         Ok(Self {
             output_directory,
             manifest_path,
-            rebuild_std: false,
         })
     }
 
-    /// Rebuilds the std for the runner
-    pub const fn rebuild_std(mut self, yes: bool) -> Self {
-        self.rebuild_std = yes;
-        self
-    }
-
     /// Builds a runner that includes the given builds
-    pub fn build(&self, target: &str, builds_path: PathBuf) -> anyhow::Result<PathBuf> {
+    pub fn build(
+        &self,
+        cargo_args: impl IntoIterator<Item = impl AsRef<OsStr>>,
+        target: &str,
+        builds_path: PathBuf,
+    ) -> anyhow::Result<PathBuf> {
         let cargo = CargoBuild::new()
             .release()
             .target(target)
             .target_dir(&self.output_directory)
             .manifest_path(&self.manifest_path)
+            .args(cargo_args)
             .env("MULTIVERS_BUILDS_DESCRIPTION_PATH", builds_path);
-
-        let cargo = if self.rebuild_std {
-            cargo.args(["-Zbuild-std=std"])
-            // TODO: -Zbuild-std-features
-        } else {
-            cargo
-        };
 
         let cargo = cargo
             .exec()

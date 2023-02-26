@@ -126,9 +126,9 @@ struct Multivers {
     workspace: clap_cargo::Workspace,
     output_directory: PathBuf,
     features: clap_cargo::Features,
-    rebuild_std: bool,
     cpu_features: BTreeMap<String, Vec<String>>,
     progress: ProgressBar,
+    cargo_args: Vec<String>,
 }
 
 impl Multivers {
@@ -153,8 +153,7 @@ impl Multivers {
             .into_std_path_buf();
 
         let runner = RunnerBuilder::generate_crate_sources(output_directory.clone())
-            .context("Failed to generate the source files of the runner")?
-            .rebuild_std(args.rebuild_std);
+            .context("Failed to generate the source files of the runner")?;
 
         Ok(Self {
             metadata,
@@ -163,7 +162,6 @@ impl Multivers {
             workspace: args.workspace,
             output_directory,
             features: args.features,
-            rebuild_std: args.rebuild_std,
             cpu_features,
             progress: indicatif::ProgressBar::new(0).with_style(
                 ProgressStyle::with_template(if Term::stdout().size().1 > 80 {
@@ -173,6 +171,7 @@ impl Multivers {
                 })?
                 .progress_chars("=> "),
             ),
+            cargo_args: args.args
         })
     }
 
@@ -199,14 +198,8 @@ impl Multivers {
                     .target(&self.target)
                     .target_dir(&self.output_directory)
                     .manifest_path(&manifest_path)
+                    .args(&self.cargo_args)
                     .env("RUSTFLAGS", rust_flags);
-
-                let cargo = if self.rebuild_std {
-                    cargo.args(["-Zbuild-std=std"])
-                    // TODO: -Zbuild-std-features
-                } else {
-                    cargo
-                };
 
                 let cargo = if self.features.all_features {
                     cargo.all_features()
@@ -310,7 +303,9 @@ impl Multivers {
 
             println!("{:>12} runner", style("Compiling").bold().green());
 
-            let bin_path = self.runner.build(&self.target, builds_path)?;
+            let bin_path = self
+                .runner
+                .build(&self.cargo_args, &self.target, builds_path)?;
 
             println!(
                 "{:>12} ({})",

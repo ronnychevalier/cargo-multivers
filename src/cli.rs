@@ -18,10 +18,6 @@ pub struct Args {
     #[clap(long, value_name = "TRIPLE")]
     pub target: Option<String>,
 
-    /// Rebuild the std for each feature set as well
-    #[clap(long)]
-    pub rebuild_std: bool,
-
     /// Print information on stdout
     #[clap(long, value_name = "INFORMATION")]
     pub print: Option<Print>,
@@ -43,6 +39,10 @@ pub struct Args {
 
     #[command(flatten)]
     pub features: clap_cargo::Features,
+
+    /// Arguments given to cargo build
+    #[clap(raw = true)]
+    pub args: Vec<String>,
 }
 
 impl Args {
