@@ -1,6 +1,6 @@
 [package]
 name = "cargo-multivers"
-version = "0.1.0"
+version = "0.2.0"
 description = "Cargo subcommand to build a portable optimized binary"
 edition = "2021"
 readme = "README.md"
@@ -12,7 +12,8 @@ repository = "https://github.com/ronnychevalier/cargo-multivers"
 include = [
     "/src/*",
     "/LICENSE*",
-    "/multivers-runner/src/main.rs",
+    "/multivers-runner/src/*.rs",
+    "/multivers-runner/build.rs",
     "/multivers-runner/Cargo.*",
 ]
 
