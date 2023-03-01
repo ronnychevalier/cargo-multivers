@@ -5,6 +5,8 @@ use std::process::Command;
 
 use once_cell::sync::Lazy;
 
+use rustc_version::Channel;
+
 // We do not call "cargo rustc" (which would be simpler),
 // because it takes too much time to execute each time.
 // Calling rustc directly is faster.
@@ -26,6 +28,12 @@ pub struct Rustc;
 impl Rustc {
     fn command() -> Command {
         Command::new(RUSTC.as_path())
+    }
+
+    /// Returns true if rustc is on the nightly release channel
+    pub fn is_nightly() -> bool {
+        rustc_version::VersionMeta::for_command(Self::command())
+            .map_or(false, |version| version.channel == Channel::Nightly)
     }
 
     /// Returns the default target that rustc uses to build if none is provided (the host)

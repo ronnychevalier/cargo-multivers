@@ -339,6 +339,11 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
+    anyhow::ensure!(
+        Rustc::is_nightly(),
+        "You must run cargo multivers with Rust nightly channel. For example, you can run: `cargo +nightly multivers`"
+    );
+
     let multivers = Multivers::from_args(args)?;
     multivers.build()?;
 
