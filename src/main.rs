@@ -24,6 +24,9 @@ use console::Term;
 use rayon::prelude::IntoParallelRefIterator;
 use rayon::prelude::ParallelIterator;
 
+use sha3::Digest;
+use sha3::Sha3_256;
+
 mod cli;
 mod runner;
 mod rustc;
@@ -259,8 +262,23 @@ impl Multivers {
                     }
                 })?;
 
+                let mut hasher = Sha3_256::new();
+                hasher.update(target_features_flags.as_bytes());
+                let filename = format!("{:x}", hasher.finalize());
+
+                let mut output_path = self
+                    .output_directory
+                    .join(&self.target)
+                    .join("release")
+                    .join(filename);
+                output_path.set_extension(std::env::consts::EXE_EXTENSION);
+
+                if let Err(e) = std::fs::rename(bin_path, &output_path) {
+                    return Some(Err(e.into()));
+                }
+
                 let build = BuildDescription {
-                    path: bin_path,
+                    path: output_path,
                     features: cpu_features.clone(),
                 };
 
