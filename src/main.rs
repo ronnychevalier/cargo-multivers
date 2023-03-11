@@ -115,6 +115,8 @@ fn cpu_features(args: &Args, target: &str) -> anyhow::Result<BTreeMap<String, Ve
 struct BuildDescription {
     path: PathBuf,
     features: Vec<String>,
+    #[serde(skip)]
+    hash: Option<Vec<u8>>,
 }
 
 #[derive(Serialize)]
@@ -186,6 +188,7 @@ impl Multivers {
         self.progress.set_length(self.cpu_features.len() as u64);
         self.progress.set_prefix("Building");
 
+        let mut hasher = Sha3_256::new();
         let mut builds = self
             .cpu_features
             .iter()
@@ -262,9 +265,8 @@ impl Multivers {
                     }
                 })?;
 
-                let mut hasher = Sha3_256::new();
                 hasher.update(target_features_flags.as_bytes());
-                let filename = format!("{:x}", hasher.finalize());
+                let filename = format!("{:x}", hasher.finalize_reset());
 
                 let mut output_path = self
                     .output_directory
@@ -277,16 +279,35 @@ impl Multivers {
                     return Some(Err(e.into()));
                 }
 
+                let hash = std::fs::read(&output_path).ok().map(|bytes| {
+                    hasher.update(&bytes);
+                    hasher.finalize_reset().to_vec()
+                });
+
                 let build = BuildDescription {
                     path: output_path,
                     features: cpu_features.clone(),
+                    hash,
                 };
 
                 Some(Ok(build))
             })
             .collect::<anyhow::Result<Vec<_>>>()?;
         builds.sort_unstable_by(|build1, build2| {
-            // Awful heuristic just to use in priority the build with the largest feature set supported
+            // First, we sort based on the hash of each build.
+            build1
+                .hash
+                .cmp(&build2.hash)
+                // Then, based on the features.
+                .then_with(|| build1.features.len().cmp(&build2.features.len()))
+        });
+        // So that we can remove the duplicated builds and we remove the ones requiring more features.
+        builds.dedup_by(|a, b| match (&a.hash, &b.hash) {
+            (Some(a), Some(b)) => a == b,
+            _ => false,
+        });
+        // Finally, we sort them to put the builds requiring more features at the top.
+        builds.sort_unstable_by(|build1, build2| {
             build1.features.len().cmp(&build2.features.len()).reverse()
         });
 

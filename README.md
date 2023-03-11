@@ -13,10 +13,10 @@ Cargo subcommand to build multiple versions of the same binary, each with a diff
 Each version is built with a set of CPU features (e.g., `+cmpxchg16b,+fxsr,+sse,+sse2,+sse3`) from a CPU (e.g., `ivybridge`) supported by the target (e.g., `x86_64-pc-windows-msvc`).
 It does not build the powerset of the CPU features, but only a subset: from the list of CPU known to `rustc` for a given target, it fetches each set of CPU features and filters out
 the duplicates.
-Each version built is then compressed.
-Finally, it builds a runner that contains all the compressed versions.
+After building the different versions, it filters out the duplicates by keeping the one requiring less CPU features.
+Finally, it builds a runner that contains all the remaining versions compressed.
 For instance, when building for the target `x86_64-pc-windows-msvc`, 37 different versions
-will be built, compressed, and merged into a single portable binary.
+will be built, filtered, compressed, and merged into a single portable binary.
 
 When executed, the runner uncompresses and executes the build that matches the CPU features
 of the host.
