@@ -341,7 +341,9 @@ impl Multivers {
                 .builds
                 .iter()
                 .find_map(|build| build.original_filename.clone())
-                .unwrap_or(format!("multivers-runner{}", std::env::consts::EXE_SUFFIX).into());
+                .unwrap_or_else(|| {
+                    format!("multivers-runner{}", std::env::consts::EXE_SUFFIX).into()
+                });
 
             let encoded =
                 rmp_serde::to_vec_named(&builds).context("Failed to encode the builds")?;
