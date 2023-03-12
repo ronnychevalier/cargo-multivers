@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::ffi::OsString;
 use std::io::Write;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -114,9 +115,14 @@ fn cpu_features(args: &Args, target: &str) -> anyhow::Result<BTreeMap<String, Ve
 #[derive(Serialize)]
 struct BuildDescription {
     path: PathBuf,
+
     features: Vec<String>,
+
     #[serde(skip)]
     hash: Option<Vec<u8>>,
+
+    #[serde(skip)]
+    original_filename: Option<OsString>,
 }
 
 #[derive(Serialize)]
@@ -275,7 +281,7 @@ impl Multivers {
                     .join(filename);
                 output_path.set_extension(std::env::consts::EXE_EXTENSION);
 
-                if let Err(e) = std::fs::rename(bin_path, &output_path) {
+                if let Err(e) = std::fs::rename(&bin_path, &output_path) {
                     return Some(Err(e.into()));
                 }
 
@@ -288,6 +294,7 @@ impl Multivers {
                     path: output_path,
                     features: cpu_features.clone(),
                     hash,
+                    original_filename: bin_path.file_name().map(ToOwned::to_owned),
                 };
 
                 Some(Ok(build))
@@ -330,6 +337,12 @@ impl Multivers {
 
             let builds = self.build_package(selected_package)?;
 
+            let original_filename = builds
+                .builds
+                .iter()
+                .find_map(|build| build.original_filename.clone())
+                .unwrap_or(format!("multivers-runner{}", std::env::consts::EXE_SUFFIX).into());
+
             let encoded =
                 rmp_serde::to_vec_named(&builds).context("Failed to encode the builds")?;
 
@@ -342,9 +355,12 @@ impl Multivers {
 
             println!("{:>12} runner", style("Compiling").bold().green());
 
-            let bin_path = self
-                .runner
-                .build(&self.cargo_args, &self.target, builds_path)?;
+            let bin_path = self.runner.build(
+                &self.cargo_args,
+                &self.target,
+                &builds_path,
+                &original_filename,
+            )?;
 
             println!(
                 "{:>12} ({})",

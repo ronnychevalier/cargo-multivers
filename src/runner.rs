@@ -1,5 +1,5 @@
 use std::ffi::OsStr;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 
@@ -41,7 +41,8 @@ impl RunnerBuilder {
         &self,
         cargo_args: impl IntoIterator<Item = impl AsRef<OsStr>>,
         target: &str,
-        builds_path: PathBuf,
+        builds_path: &Path,
+        original_filename: &OsStr,
     ) -> anyhow::Result<PathBuf> {
         let cargo = CargoBuild::new()
             .release()
@@ -88,6 +89,11 @@ impl RunnerBuilder {
             })
             .ok_or_else(|| anyhow::anyhow!("Failed to build the runner"))?;
 
-        Ok(bin_path)
+        let mut output_path = bin_path.clone();
+        output_path.set_file_name(original_filename);
+
+        std::fs::rename(&bin_path, &output_path)?;
+
+        Ok(output_path)
     }
 }
