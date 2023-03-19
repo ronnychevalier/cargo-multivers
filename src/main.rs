@@ -336,6 +336,40 @@ impl Multivers {
             );
 
             let builds = self.build_package(selected_package)?;
+            if builds.builds.len() == 1 {
+                // SAFETY: The Vec is not empty, so the Option can only be Some.
+                let build = unsafe { builds.builds.first().unwrap_unchecked() };
+
+                let original_filename = builds
+                    .builds
+                    .iter()
+                    .find_map(|build| build.original_filename.clone())
+                    .unwrap_or_else(|| {
+                        format!("multivers-runner{}", std::env::consts::EXE_SUFFIX).into()
+                    });
+
+                let output_path = self
+                    .output_directory
+                    .join(&self.target)
+                    .join("release")
+                    .join(original_filename);
+
+                std::fs::rename(&build.path, &output_path).with_context(|| {
+                    format!(
+                        "Failed to rename `{}` to `{}`",
+                        build.path.display(),
+                        output_path.display()
+                    )
+                })?;
+
+                println!(
+                    "{:>12} 1 version, no runner needed ({})",
+                    style("Finished").bold().green(),
+                    output_path.display()
+                );
+
+                continue;
+            }
 
             let original_filename = builds
                 .builds
@@ -355,7 +389,11 @@ impl Multivers {
             std::fs::write(&builds_path, encoded)
                 .with_context(|| format!("Failed to write to `{}`", builds_path.display()))?;
 
-            println!("{:>12} runner", style("Compiling").bold().green());
+            println!(
+                "{:>12} {} versions compressed into a runner",
+                style("Compiling").bold().green(),
+                builds.builds.len(),
+            );
 
             let bin_path = self.runner.build(
                 &self.cargo_args,

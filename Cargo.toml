@@ -36,6 +36,7 @@ sha3 = "0.10.6"
 [workspace]
 exclude = [
     "multivers-runner",
+    "tests/test-argv",
     "tests/test-nothing",
     "tests/test-useless-computation",
 ]
