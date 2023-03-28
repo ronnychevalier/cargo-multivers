@@ -1,6 +1,6 @@
 [package]
 name = "cargo-multivers"
-version = "0.2.1"
+version = "0.3.0"
 description = "Cargo subcommand to build a portable optimized binary"
 edition = "2021"
 readme = "README.md"
