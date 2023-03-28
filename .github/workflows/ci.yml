@@ -18,8 +18,7 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest", "windows-latest"]
-        rust: ["stable"]
-    continue-on-error: ${{ matrix.rust != 'stable' }}
+        rust: ["nightly"]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
