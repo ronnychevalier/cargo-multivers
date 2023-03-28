@@ -11,7 +11,7 @@ use escargot::CargoBuild;
 
 use serde::Serialize;
 
-use target_lexicon::{Architecture, Triple};
+use target_lexicon::{Architecture, Environment, Triple};
 
 use indicatif::ProgressBar;
 use indicatif::ProgressStyle;
@@ -182,10 +182,16 @@ impl Multivers {
     fn build_package(&self, package: &Package) -> anyhow::Result<BuildsDescription> {
         let manifest_path = package.manifest_path.as_std_path().to_path_buf();
         let features_list = self.features.features.join(" ");
-        let rust_flags = std::env::var("RUST_FLAGS").unwrap_or_default();
+        let mut rust_flags = std::env::var("RUST_FLAGS").unwrap_or_default();
 
         self.progress.set_length(self.cpu_features.len() as u64);
         self.progress.set_prefix("Building");
+
+        let triple = Triple::from_str(&self.target).context("Failed to parse the target")?;
+
+        if triple.environment == Environment::Msvc {
+            rust_flags.push_str(" -C link-args=/Brepro");
+        };
 
         let mut hasher = Sha3_256::new();
         let mut builds = self
