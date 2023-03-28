@@ -33,6 +33,9 @@ rmp-serde = "1.1"
 rustc_version = "0.4.0"
 sha3 = "0.10.6"
 
+[dev-dependencies]
+assert_cmd = "2"
+
 [workspace]
 exclude = [
     "multivers-runner",
