@@ -1,12 +1,13 @@
 use std::path::Path;
 use std::process::Command;
 
-use assert_cmd::assert::Assert;
 use assert_cmd::prelude::OutputAssertExt;
 
 use escargot::CargoBuild;
 
-fn build_and_run_crate(name: &str) -> Assert {
+use predicates::prelude::*;
+
+fn build_crate(name: &str) -> Command {
     let multivers_manifest = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
     let test_manifest = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
@@ -31,12 +32,25 @@ fn build_and_run_crate(name: &str) -> Assert {
     let (_, path) = last_line.split_once('(').unwrap();
     let multivers_runner = path.strip_suffix(')').map(Path::new).unwrap();
 
-    Command::new(multivers_runner).assert().success()
+    Command::new(multivers_runner)
 }
 
-/// Checks that we can build a crate that does nothing
-/// and that it can run successfully.
+/// Checks that we can build a crate that does nothing and that it can run successfully
 #[test]
 fn crate_that_does_nothing() {
-    build_and_run_crate("test-nothing").stdout("");
+    build_crate("test-nothing").assert().success().stdout("");
+}
+
+/// Checks that we can build a crate that prints its argv and that works as expected
+#[test]
+fn crate_that_prints_argv() {
+    let expected_args = ["z", "foo2", "''"];
+    build_crate("test-argv")
+        .args(expected_args)
+        .assert()
+        .success()
+        .stdout(predicate::str::ends_with(format!(
+            "{}\n",
+            expected_args.join(" ")
+        )));
 }
