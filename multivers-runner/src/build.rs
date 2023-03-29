@@ -1,4 +1,4 @@
-use std::io::Read;
+use std::io::Write;
 
 use flate2::read::DeflateDecoder;
 
@@ -10,15 +10,14 @@ pub struct Build<'a> {
 }
 
 impl<'a> Build<'a> {
-    pub fn required_cpu_features(&self) -> &[&str] {
-        self.features.as_ref()
+    pub const fn required_cpu_features(&self) -> &[&str] {
+        &self.features
     }
 
-    pub fn decompress(self) -> anyhow::Result<Box<[u8]>> {
-        let mut build = Vec::with_capacity(self.compressed_build.len());
+    /// Decompresses the build into a writer
+    pub fn decompress_into(&self, mut output: impl Write) -> std::io::Result<()> {
         let mut decoder = DeflateDecoder::new(self.compressed_build);
-        decoder.read_to_end(&mut build)?;
 
-        Ok(build.into_boxed_slice())
+        std::io::copy(&mut decoder, &mut output).map(|_| ())
     }
 }

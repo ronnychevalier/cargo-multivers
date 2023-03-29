@@ -1,6 +1,5 @@
 #![feature(stdsimd)]
 
-use std::io::Write;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -29,7 +28,6 @@ fn main() -> Result<()> {
         .ok_or_else(|| {
             anyhow::anyhow!("Failed to find a build satisfying the current CPU's features")
         })?;
-    let build = build.decompress().context("Failed to decompress build")?;
 
     let exe_filename = std::env::args_os()
         .next()
@@ -53,7 +51,8 @@ fn main() -> Result<()> {
         let mut file = memfd_create(&memfd_name, MemFdCreateFlag::MFD_CLOEXEC)
             .map(|fd| unsafe { File::from_raw_fd(fd) })
             .context("Failed to create an anomymous memory file")?;
-        file.write_all(&build)
+        build
+            .decompress_into(&mut file)
             .context("Failed to write the build to an anomymous memory file")?;
 
         let args = std::env::args_os()
@@ -86,7 +85,7 @@ fn main() -> Result<()> {
         permissions.set_mode(0o700);
     }
 
-    file.write_all(&build).with_context(|| {
+    build.decompress_into(&mut file).with_context(|| {
         format!(
             "Failed to write the build to the temporary file `{}`",
             file.path().display()
