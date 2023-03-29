@@ -20,7 +20,7 @@ include = [
 [dependencies]
 anyhow = "1.0.68"
 escargot = "0.5.7"
-clap = { version = "4.0.32", features = ["derive", "cargo"] }
+clap = { version = "4.2", features = ["derive", "cargo"] }
 clap-cargo = { version = "0.10", features = ["cargo_metadata"] }
 cargo_metadata = "0.15.2"
 target-lexicon = { version = "0.12.5", features = ["std"] }
