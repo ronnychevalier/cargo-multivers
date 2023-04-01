@@ -26,6 +26,8 @@ fn main() {
 
     let builds: BuildsDescription =
         if let Some(path) = option_env!("MULTIVERS_BUILDS_DESCRIPTION_PATH") {
+            println!("cargo:rerun-if-changed={path}");
+
             let file = File::open(path).expect("Failed to open the builds description file");
             rmp_serde::from_read(BufReader::new(file))
                 .expect("Failed to parse the builds description file")
@@ -37,6 +39,8 @@ fn main() {
         .builds
         .into_iter()
         .map(|build| {
+            println!("cargo:rerun-if-changed={}", build.path.display());
+
             let file = File::open(&build.path).expect("Failed to open build");
             let reader = BufReader::new(file);
             let mut deflater = DeflateEncoder::new(reader, Compression::best());
@@ -64,7 +68,7 @@ fn main() {
         ];
     };
 
-    std::fs::write(&dest_path, tokens.to_string()).unwrap();
+    std::fs::write(dest_path, tokens.to_string()).unwrap();
 
     println!("cargo:rerun-if-changed=build.rs");
 }
