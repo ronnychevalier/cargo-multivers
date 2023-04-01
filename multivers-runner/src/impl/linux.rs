@@ -12,7 +12,9 @@ use nix::unistd::fexecve;
 use crate::build::Build;
 
 pub fn exec(build: Build, exe_filename: OsString) -> Result<Infallible> {
-    let memfd_name = CString::new(exe_filename.to_str().unwrap_or("cargo-multivers"))?;
+    let exe_filename = exe_filename.into_vec();
+
+    let memfd_name = unsafe { CString::from_vec_unchecked(exe_filename) };
     let mut file = memfd_create(&memfd_name, MemFdCreateFlag::MFD_CLOEXEC)
         .map(|fd| unsafe { File::from_raw_fd(fd) })
         .context("Failed to create an anomymous memory file")?;
