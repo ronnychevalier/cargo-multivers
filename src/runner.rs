@@ -10,6 +10,9 @@ const RUNNER_CARGO_LOCK: &[u8] = include_bytes!("../multivers-runner/Cargo.lock"
 const RUNNER_BUILD_SCRIPT: &[u8] = include_bytes!("../multivers-runner/build.rs");
 const RUNNER_MAIN: &[u8] = include_bytes!("../multivers-runner/src/main.rs");
 const RUNNER_BUILD: &[u8] = include_bytes!("../multivers-runner/src/build.rs");
+const RUNNER_IMPL: &[u8] = include_bytes!("../multivers-runner/src/impl.rs");
+const RUNNER_IMPL_LINUX: &[u8] = include_bytes!("../multivers-runner/src/impl/linux.rs");
+const RUNNER_IMPL_GENERIC: &[u8] = include_bytes!("../multivers-runner/src/impl/generic.rs");
 
 pub struct RunnerBuilder {
     output_directory: PathBuf,
@@ -21,11 +24,15 @@ impl RunnerBuilder {
     pub fn generate_crate_sources(output_directory: PathBuf) -> anyhow::Result<Self> {
         let root_directory = output_directory.join("multivers-runner");
         let src_directory = root_directory.join("src");
+        let impl_directory = src_directory.join("impl");
         let manifest_path = root_directory.join("Cargo.toml");
 
-        std::fs::create_dir_all(&src_directory)?;
+        std::fs::create_dir_all(&impl_directory)?;
         std::fs::write(src_directory.join("main.rs"), RUNNER_MAIN)?;
         std::fs::write(src_directory.join("build.rs"), RUNNER_BUILD)?;
+        std::fs::write(src_directory.join("impl.rs"), RUNNER_IMPL)?;
+        std::fs::write(impl_directory.join("linux.rs"), RUNNER_IMPL_LINUX)?;
+        std::fs::write(impl_directory.join("generic.rs"), RUNNER_IMPL_GENERIC)?;
         std::fs::write(&manifest_path, RUNNER_CARGO_TOML)?;
         std::fs::write(root_directory.join("Cargo.lock"), RUNNER_CARGO_LOCK)?;
         std::fs::write(root_directory.join("build.rs"), RUNNER_BUILD_SCRIPT)?;
