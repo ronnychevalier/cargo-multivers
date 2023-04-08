@@ -1,8 +1,6 @@
 use std::fs::File;
-use std::io::{BufReader, Read};
+use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
-
-use flate2::{bufread::DeflateEncoder, Compression};
 
 use quote::quote;
 
@@ -18,6 +16,32 @@ struct BuildDescription {
 struct BuildsDescription {
     _version: Option<u8>,
     builds: Vec<BuildDescription>,
+}
+
+#[cfg(feature = "deflate")]
+fn compress(reader: impl BufRead) -> Vec<u8> {
+    use flate2::{bufread::DeflateEncoder, Compression};
+    use std::io::Read;
+
+    let mut deflater = DeflateEncoder::new(reader, Compression::best());
+    let mut buffer = Vec::new();
+    deflater.read_to_end(&mut buffer).unwrap();
+
+    buffer
+}
+
+#[cfg(feature = "lz4")]
+fn compress(reader: impl BufRead) -> Vec<u8> {
+    let buffer = Vec::new();
+    let mut encoder = lz4_flex::frame::FrameEncoder::new(buffer);
+    std::io::copy(&mut reader, &mut encoder).unwrap();
+
+    encoder.finish().unwrap()
+}
+
+#[cfg(feature = "zstd")]
+fn compress(reader: impl BufRead) -> Vec<u8> {
+    zstd::encode_all(reader, 21).unwrap()
 }
 
 fn main() {
@@ -43,9 +67,7 @@ fn main() {
 
             let file = File::open(&build.path).expect("Failed to open build");
             let reader = BufReader::new(file);
-            let mut deflater = DeflateEncoder::new(reader, Compression::best());
-            let mut buffer = Vec::new();
-            deflater.read_to_end(&mut buffer).unwrap();
+            let buffer = compress(reader);
 
             let features = build.features;
             quote! {

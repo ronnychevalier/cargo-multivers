@@ -1,7 +1,5 @@
 use std::io::Write;
 
-use flate2::read::DeflateDecoder;
-
 include!(concat!(env!("OUT_DIR"), "/builds.rs"));
 
 /// Stores a build and the CPU features it requires
@@ -13,10 +11,20 @@ pub struct Build<'a> {
 
 impl<'a> Build<'a> {
     /// Decompresses the build into a writer
-    pub fn decompress_into(&self, mut output: impl Write) -> std::io::Result<()> {
-        let mut decoder = DeflateDecoder::new(self.compressed_build);
-
-        std::io::copy(&mut decoder, &mut output).map(|_| ())
+    pub fn decompress_into(&self, output: impl Write) -> std::io::Result<()> {
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "deflate")] {
+                let mut output = output;
+                let mut decoder = flate2::read::DeflateDecoder::new(self.compressed_build);
+                std::io::copy(&mut decoder, &mut output).map(|_| ())
+            } else if #[cfg(feature = "lz4")] {
+                let mut output = output;
+                let mut decoder = lz4_flex::frame::FrameDecoder::new(self.compressed_build);
+                std::io::copy(&mut decoder, &mut output).map(|_| ())
+            } else if #[cfg(feature = "zstd")] {
+                zstd::stream::copy_decode(self.compressed_build, output)
+            }
+        }
     }
 
     /// Finds a version that matches the CPU features of the host
