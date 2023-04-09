@@ -15,10 +15,15 @@ zstd = ["dep:zstd"]
 cfg-if = "1"
 flate2 = { version = "1", optional = true }
 std_detect = { git = "https://github.com/rust-lang/stdarch", rev = "3a96d41a06b2d939fa743d7010f911aa1afcba39", package = "std_detect" }
-tempfile = "3.5"
 lz4_flex = { version = "0.10", optional = true }
 zstd = { version = "0.12", optional = true }
 proc-exit = "2"
+
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+tempfile = "3.5"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+nix = { version = "0.26.1", default-features = false, features = ["fs", "process"] }
 
 [build-dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -33,6 +38,3 @@ lto = true
 strip = "symbols"
 opt-level = "z"
 codegen-units = 1
-
-[target.'cfg(target_os = "linux")'.dependencies]
-nix = { version = "0.26.1", default-features = false, features = ["fs", "process"] }
