@@ -23,7 +23,8 @@ proc-exit = "2"
 tempfile = "3.5"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-nix = { version = "0.26.1", default-features = false, features = ["fs", "process"] }
+rustix = { version = "0.37", default-features = false, features = ["fs"] }
+libc = "0.2"
 
 [build-dependencies]
 serde = { version = "1", features = ["derive"] }
