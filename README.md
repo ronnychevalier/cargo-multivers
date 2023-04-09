@@ -29,6 +29,10 @@ it is mostly intended for the following use cases:
 - To build a project that is distributed to multiple users with different microarchitectures (e.g., a release version of your project).
 - To build a program that performs long running tasks (e.g., heavy computations, a server, or a game).
 
+## Support
+
+This project has been tested on Windows and Linux (due to the use of `memfd_create`, only Linux >= v3.17 is supported).
+
 ## Installation
 
 ```bash
