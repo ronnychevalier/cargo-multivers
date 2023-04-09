@@ -1,4 +1,5 @@
 #![feature(stdsimd)]
+#![no_main]
 use std::path::PathBuf;
 
 mod build;
@@ -7,7 +8,8 @@ mod r#impl;
 use build::Build;
 use r#impl::exec;
 
-fn main() {
+#[no_mangle]
+pub fn main(_argc: i32, _argv: *const *const u8) {
     let result = run();
 
     proc_exit::exit(result);
