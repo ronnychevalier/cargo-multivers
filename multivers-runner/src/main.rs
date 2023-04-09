@@ -1,17 +1,22 @@
 #![feature(stdsimd)]
 use std::path::PathBuf;
 
-use anyhow::Result;
-
 mod build;
 mod r#impl;
 
 use build::Build;
 use r#impl::exec;
 
-fn main() -> Result<()> {
+fn main() {
+    let result = run();
+
+    proc_exit::exit(result);
+}
+
+fn run() -> proc_exit::ExitResult {
     let build = Build::find().ok_or_else(|| {
-        anyhow::anyhow!("Failed to find a build satisfying the host CPU features")
+        proc_exit::Code::FAILURE
+            .with_message("Failed to find a build satisfying the host CPU features")
     })?;
 
     let exe_filename = std::env::args_os()
