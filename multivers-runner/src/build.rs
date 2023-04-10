@@ -1,3 +1,4 @@
+use std::convert::Infallible;
 use std::io::Write;
 
 include!(concat!(env!("OUT_DIR"), "/builds.rs"));
@@ -40,5 +41,22 @@ impl<'a> Build<'a> {
                 .all(|feature| supported_features.contains(feature))
                 .then_some(build)
         })
+    }
+}
+
+pub trait Executable {
+    unsafe fn exec(
+        self,
+        argc: i32,
+        argv: *const *const i8,
+        envp: *const *const i8,
+    ) -> Result<Infallible, proc_exit::Exit>;
+}
+
+cfg_if::cfg_if! {
+    if #[cfg(target_os = "linux")] {
+        mod linux;
+    } else {
+        mod generic;
     }
 }
