@@ -13,6 +13,7 @@ include = [
     "/src/*",
     "/LICENSE*",
     "/multivers-runner/src/*.rs",
+    "/multivers-runner/src/build/*.rs",
     "/multivers-runner/build.rs",
     "/multivers-runner/Cargo.*",
 ]
