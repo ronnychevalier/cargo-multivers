@@ -34,7 +34,7 @@ impl<'a> Executable for Build<'a> {
             permissions.set_mode(0o700);
         }
 
-        self.decompress_into(&mut file).map_err(|_| {
+        self.extract_into(&mut file).map_err(|_| {
             proc_exit::Code::FAILURE.with_message(format!(
                 "Failed to write the build to the temporary file `{}`",
                 file.path().display()

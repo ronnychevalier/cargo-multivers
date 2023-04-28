@@ -5,19 +5,12 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 publish = false
 
-[features]
-default = ["deflate"]
-deflate = ["dep:flate2"]
-lz4 = ["dep:lz4_flex"]
-zstd = ["dep:zstd"]
-
 [dependencies]
 cfg-if = "1"
-flate2 = { version = "1", optional = true }
 std_detect = { git = "https://github.com/rust-lang/stdarch", rev = "3a96d41a06b2d939fa743d7010f911aa1afcba39", package = "std_detect" }
-lz4_flex = { version = "0.10", optional = true }
-zstd = { version = "0.12", optional = true }
 proc-exit = "2"
+qbsdiff = "1.4.0"
+bzip2 = { version = "0.4", features = ["static"] }
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
 tempfile = "3.5"
@@ -29,10 +22,9 @@ libc = "0.2"
 [build-dependencies]
 serde = { version = "1", features = ["derive"] }
 rmp-serde = "1.1"
-flate2 = { version = "1", optional = true }
-lz4_flex = { version = "0.10", optional = true }
-zstd = { version = "0.12", optional = true }
 quote = { version = "1.0", default-features = false }
+qbsdiff = "1.4.0"
+bzip2 = "0.4"
 
 [profile.release]
 lto = true

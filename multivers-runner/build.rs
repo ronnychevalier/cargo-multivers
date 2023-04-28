@@ -1,6 +1,11 @@
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Read};
 use std::path::{Path, PathBuf};
+
+use bzip2::read::BzEncoder;
+use bzip2::Compression;
+
+use qbsdiff::Bsdiff;
 
 use quote::quote;
 
@@ -18,37 +23,27 @@ struct BuildsDescription {
     builds: Vec<BuildDescription>,
 }
 
-#[cfg(feature = "deflate")]
 fn compress(reader: impl BufRead) -> Vec<u8> {
-    use flate2::{bufread::DeflateEncoder, Compression};
-    use std::io::Read;
-
-    let mut deflater = DeflateEncoder::new(reader, Compression::best());
+    let mut compressor = BzEncoder::new(reader, Compression::best());
     let mut buffer = Vec::new();
-    deflater.read_to_end(&mut buffer).unwrap();
+    compressor.read_to_end(&mut buffer).unwrap();
 
     buffer
 }
 
-#[cfg(feature = "lz4")]
-fn compress(reader: impl BufRead) -> Vec<u8> {
-    let buffer = Vec::new();
-    let mut encoder = lz4_flex::frame::FrameEncoder::new(buffer);
-    std::io::copy(&mut reader, &mut encoder).unwrap();
-
-    encoder.finish().unwrap()
-}
-
-#[cfg(feature = "zstd")]
-fn compress(reader: impl BufRead) -> Vec<u8> {
-    zstd::encode_all(reader, 21).unwrap()
+fn bsdiff(source: &[u8], target: &[u8]) -> Vec<u8> {
+    let mut patch = Vec::new();
+    Bsdiff::new(source, target)
+        .compare(std::io::Cursor::new(&mut patch))
+        .unwrap();
+    patch
 }
 
 fn main() {
     let out_dir = std::env::var_os("OUT_DIR").unwrap();
     let dest_path = Path::new(&out_dir).join("builds.rs");
 
-    let builds: BuildsDescription =
+    let mut builds: BuildsDescription =
         if let Some(path) = option_env!("MULTIVERS_BUILDS_DESCRIPTION_PATH") {
             println!("cargo:rerun-if-changed={path}");
 
@@ -58,35 +53,62 @@ fn main() {
         } else {
             Default::default()
         };
+    // We sort them to put the builds requiring more features at the top.
+    builds.builds.sort_unstable_by(|build1, build2| {
+        build1.features.len().cmp(&build2.features.len()).reverse()
+    });
 
-    let builds = builds
+    // The source is one requiring no or the minimum amount of features.
+    // We should make it configurable at some point.
+    let source_build = if let Some(source) = builds.builds.pop() {
+        source
+    } else {
+        println!("No builds");
+        std::process::exit(1);
+    };
+
+    let source = std::fs::read(source_build.path).unwrap();
+    let source_features = source_build.features;
+
+    let patches = builds
         .builds
         .into_iter()
         .map(|build| {
             println!("cargo:rerun-if-changed={}", build.path.display());
 
-            let file = File::open(&build.path).expect("Failed to open build");
-            let reader = BufReader::new(file);
-            let buffer = compress(reader);
-
+            let target = std::fs::read(&build.path).unwrap();
+            let patch = bsdiff(&source, &target);
+            println!("cargo:warning=PATCH SIZE {}", patch.len());
             let features = build.features;
             quote! {
                 Build {
                     compressed_build: &[
-                        #(#buffer),*
+                        #(#patch),*
                     ],
                     features: &[
                         #(#features),*
-                    ]
+                    ],
+                    source: false,
                 }
             }
         })
         .collect::<Vec<_>>();
 
-    let n_builds = builds.len();
+    let source = compress(&source[..]);
+
+    let n_builds = patches.len();
     let tokens = quote! {
-        const BUILDS: [Build; #n_builds] = [
-            #(#builds),*
+        const SOURCE: Build = Build {
+            compressed_build: &[
+                #(#source),*
+            ],
+            features: &[
+                #(#source_features),*
+            ],
+            source: true,
+        };
+        const PATCHES: [Build; #n_builds] = [
+            #(#patches),*
         ];
     };
 

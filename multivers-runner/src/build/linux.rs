@@ -27,7 +27,7 @@ impl<'a> Executable for Build<'a> {
             .map_err(|_| {
                 proc_exit::Code::FAILURE.with_message("Failed to create an anomymous memory file")
             })?;
-        self.decompress_into(&mut file).map_err(|_| {
+        self.extract_into(&mut file).map_err(|_| {
             proc_exit::Code::FAILURE
                 .with_message("Failed to write the build to an anomymous memory file")
         })?;

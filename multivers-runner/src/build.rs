@@ -1,6 +1,10 @@
 use std::convert::Infallible;
 use std::io::Write;
 
+use bzip2::read::BzDecoder;
+
+use qbsdiff::Bspatch;
+
 include!(concat!(env!("OUT_DIR"), "/builds.rs"));
 
 /// Stores a build and the CPU features it requires
@@ -8,39 +12,44 @@ pub struct Build<'a> {
     compressed_build: &'a [u8],
 
     features: &'a [&'a str],
+
+    source: bool,
 }
 
 impl<'a> Build<'a> {
-    /// Decompresses the build into a writer
-    pub fn decompress_into(&self, output: impl Write) -> std::io::Result<()> {
-        cfg_if::cfg_if! {
-            if #[cfg(feature = "deflate")] {
-                let mut output = output;
-                let mut decoder = flate2::read::DeflateDecoder::new(self.compressed_build);
-                std::io::copy(&mut decoder, &mut output).map(|_| ())
-            } else if #[cfg(feature = "lz4")] {
-                let mut output = output;
-                let mut decoder = lz4_flex::frame::FrameDecoder::new(self.compressed_build);
-                std::io::copy(&mut decoder, &mut output).map(|_| ())
-            } else if #[cfg(feature = "zstd")] {
-                zstd::stream::copy_decode(self.compressed_build, output)
-            }
+    /// Extracts the build into a writer
+    pub fn extract_into(&self, mut output: impl Write) -> std::io::Result<()> {
+        let mut decoder = BzDecoder::new(SOURCE.compressed_build);
+        if self.source {
+            std::io::copy(&mut decoder, &mut output)?;
+        } else {
+            let patcher = Bspatch::new(self.compressed_build)?;
+
+            let mut source = Vec::new();
+            std::io::copy(&mut decoder, &mut source)?;
+
+            patcher.apply(&source, output)?;
         }
+
+        Ok(())
     }
 
     /// Finds a version that matches the CPU features of the host
-    pub fn find() -> Option<Self> {
+    pub fn find() -> Self {
         let supported_features: Vec<&str> = std_detect::detect::features()
             .filter_map(|(feature, supported)| supported.then_some(feature))
             .collect();
 
-        BUILDS.into_iter().find_map(|build| {
-            build
-                .features
-                .iter()
-                .all(|feature| supported_features.contains(feature))
-                .then_some(build)
-        })
+        PATCHES
+            .into_iter()
+            .find_map(|build| {
+                build
+                    .features
+                    .iter()
+                    .all(|feature| supported_features.contains(feature))
+                    .then_some(build)
+            })
+            .unwrap_or(SOURCE)
     }
 }
 
