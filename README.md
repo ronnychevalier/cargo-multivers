@@ -68,5 +68,5 @@ additional terms or conditions.
 [Latest Version]: https://img.shields.io/crates/v/cargo-multivers.svg
 [crates.io]: https://crates.io/crates/cargo-multivers
 [ci-image]: https://img.shields.io/github/actions/workflow/status/ronnychevalier/cargo-multivers/ci.yml
-[rustc-image]: https://img.shields.io/badge/rustc-1.64+-blue.svg
+[rustc-image]: https://img.shields.io/badge/rustc-1.65+-blue.svg
 [license-image]: https://img.shields.io/crates/l/cargo-multivers.svg
