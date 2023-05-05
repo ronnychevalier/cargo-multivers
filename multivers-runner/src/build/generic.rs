@@ -11,7 +11,8 @@ impl<'a> Executable for Build<'a> {
         _argv: *const *const i8,
         _envp: *const *const i8,
     ) -> Result<Infallible, proc_exit::Exit> {
-        let exe_filename = std::env::args_os()
+        let mut args = std::env::args_os();
+        let exe_filename = args
             .next()
             .map(PathBuf::from)
             .and_then(|path| path.file_name().map(ToOwned::to_owned))
@@ -43,15 +44,12 @@ impl<'a> Executable for Build<'a> {
 
         let path = file.into_temp_path();
 
-        let exit_status = Command::new(&path)
-            .args(std::env::args_os().skip(1))
-            .status()
-            .map_err(|_| {
-                proc_exit::Code::FAILURE.with_message(format!(
-                    "Failed to execute temporary file `{}`",
-                    path.display()
-                ))
-            })?;
+        let exit_status = Command::new(&path).args(args).status().map_err(|_| {
+            proc_exit::Code::FAILURE.with_message(format!(
+                "Failed to execute temporary file `{}`",
+                path.display()
+            ))
+        })?;
 
         proc_exit::Code::from_status(exit_status).process_exit()
     }
