@@ -78,7 +78,6 @@ fn main() {
 
             let target = std::fs::read(&build.path).unwrap();
             let patch = bsdiff(&source, &target);
-            println!("cargo:warning=PATCH SIZE {}", patch.len());
             let features = build.features;
             quote! {
                 Build {
