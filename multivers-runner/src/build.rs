@@ -11,8 +11,10 @@ include!(concat!(env!("OUT_DIR"), "/builds.rs"));
 pub struct Build<'a> {
     compressed_build: &'a [u8],
 
+    /// A list of CPU features (e.g., `["avx" , "cmpxchg16b" , "fxsr" , "pclmulqdq" , "popcnt" , "sse" , "sse2" , "sse3" , "sse4.1" , "sse4.2" , "ssse3" , "xsave" , "xsaveopt"]`)
     features: &'a [&'a str],
 
+    /// Whether the build is the source (i.e., it is not a patch, it only needs to be uncompressed)
     source: bool,
 }
 
@@ -53,7 +55,12 @@ impl<'a> Build<'a> {
     }
 }
 
+/// A type that can be executed like a standard program.
 pub trait Executable {
+    /// Executes the program.
+    ///
+    /// The arguments (`argc`, `argv`, and `envp`) can be used by the implementation
+    /// for optimization purposes, but they may be ignored (and fetched with [`std::env::args_os()`]).
     unsafe fn exec(
         self,
         argc: i32,
