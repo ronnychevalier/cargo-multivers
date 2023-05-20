@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.4.0...HEAD
+
+## [0.4.0] - 20-05-2023
+
 ### Changed
 
 - Changed the runner to use compressed binary patches instead of compressing each version to reduce the size of the resulting runner.
@@ -15,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Updated dependencies
 - Improved the error messages of the runner's build script.
 
-[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.3.2...HEAD
+[0.4.0]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.3.2...v0.4.0
 
 ## [0.3.2] - 14-04-2023
 
