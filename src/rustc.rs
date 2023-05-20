@@ -43,7 +43,7 @@ impl Rustc {
         rustc_v
             .stdout
             .lines()
-            .filter_map(Result::ok)
+            .map_while(Result::ok)
             .find_map(|line| line.strip_prefix("host: ").map(ToOwned::to_owned))
             .ok_or_else(|| anyhow::anyhow!("Failed to detect default target"))
     }
@@ -62,7 +62,7 @@ impl Rustc {
         let features = cfg
             .stdout
             .lines()
-            .filter_map(Result::ok)
+            .map_while(Result::ok)
             .filter_map(|line| {
                 let line = line.strip_prefix("target_feature=\"")?;
                 // Ignores lines such as llvm14-builtins-abi
