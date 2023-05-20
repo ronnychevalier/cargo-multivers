@@ -1,5 +1,10 @@
+//! Build script that generates a Rust file that contains a compressed source binary and a set of compressed patches for each CPU features set.
+//!
+//! It reads a `MessagePack` file that contains a set of paths to executables and their dependency on CPU features
+//! from the environment variable `MULTIVERS_BUILDS_DESCRIPTION_PATH`.
+//! Then, it generates a the Rust file that contains the source and the patches.
 use std::fs::File;
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 
 use bzip2::read::BzEncoder;
@@ -11,6 +16,8 @@ use quote::quote;
 
 use serde::Deserialize;
 
+use proc_exit::Exit;
+
 #[derive(Default, Deserialize)]
 struct BuildDescription {
     path: PathBuf,
@@ -19,67 +26,114 @@ struct BuildDescription {
 
 #[derive(Default, Deserialize)]
 struct BuildsDescription {
-    _version: Option<u8>,
     builds: Vec<BuildDescription>,
 }
 
-fn compress(reader: impl BufRead) -> Vec<u8> {
-    let mut compressor = BzEncoder::new(reader, Compression::best());
-    let mut buffer = Vec::new();
-    compressor.read_to_end(&mut buffer).unwrap();
+impl BuildsDescription {
+    /// Loads a [`BuildsDescription`] from a `MessagePack` file located at the path in the environment variable `MULTIVERS_BUILDS_DESCRIPTION_PATH`
+    pub fn from_env() -> Option<Result<Self, Exit>> {
+        let path = option_env!("MULTIVERS_BUILDS_DESCRIPTION_PATH")?;
 
-    buffer
+        println!("cargo:rerun-if-changed={path}");
+
+        Some(Self::from_path(path))
+    }
+
+    fn from_path(path: impl AsRef<Path>) -> Result<Self, Exit> {
+        let path = path.as_ref();
+        let file = File::open(path).map_err(|_| {
+            proc_exit::sysexits::IO_ERR.with_message(format!(
+                "Failed to open the builds description file {}",
+                path.display()
+            ))
+        })?;
+        let mut builds_desc: Self = rmp_serde::from_read(BufReader::new(file)).map_err(|_| {
+            proc_exit::sysexits::DATA_ERR.with_message(format!(
+                "Failed to parse the builds description file {}",
+                path.display(),
+            ))
+        })?;
+
+        builds_desc.sort_by_features();
+        builds_desc.print_rerun();
+
+        Ok(builds_desc)
+    }
+
+    pub fn remove_source(&mut self) -> Option<BuildDescription> {
+        // The source is one requiring no or the minimum amount of features.
+        // Since we sorted the builds by features, we just have to remove the last element.
+        // We should make it configurable at some point.
+        self.builds.pop()
+    }
+
+    /// Sort the builds to put the ones requiring more features at the top
+    fn sort_by_features(&mut self) {
+        self.builds.sort_unstable_by(|build1, build2| {
+            build1.features.len().cmp(&build2.features.len()).reverse()
+        });
+    }
+
+    /// Prints on stdout `cargo:rerun-if-changed` for each build
+    fn print_rerun(&self) {
+        let mut stdout = std::io::stdout().lock();
+        for build in &self.builds {
+            let _ = writeln!(stdout, "cargo:rerun-if-changed={}", build.path.display());
+        }
+    }
 }
 
-fn bsdiff(source: &[u8], target: &[u8]) -> Vec<u8> {
+fn compress(reader: impl BufRead) -> Result<Vec<u8>, Exit> {
+    let mut compressor = BzEncoder::new(reader, Compression::best());
+    let mut buffer = Vec::new();
+    compressor
+        .read_to_end(&mut buffer)
+        .map_err(|_| proc_exit::sysexits::IO_ERR.with_message("Failed to compress data"))?;
+
+    Ok(buffer)
+}
+
+fn bsdiff(source: &[u8], target: &[u8]) -> Result<Vec<u8>, Exit> {
     let mut patch = Vec::new();
     Bsdiff::new(source, target)
         .compare(std::io::Cursor::new(&mut patch))
-        .unwrap();
-    patch
+        .map_err(|_| proc_exit::sysexits::IO_ERR.with_message("Failed to generate a patch"))?;
+    Ok(patch)
 }
 
-fn main() {
-    let out_dir = std::env::var_os("OUT_DIR").unwrap();
+fn main() -> Result<(), Exit> {
+    let out_dir = std::env::var_os("OUT_DIR").ok_or_else(|| {
+        proc_exit::sysexits::SOFTWARE_ERR.with_message("Missing OUT_DIR environment variable")
+    })?;
     let dest_path = Path::new(&out_dir).join("builds.rs");
 
-    let mut builds: BuildsDescription =
-        if let Some(path) = option_env!("MULTIVERS_BUILDS_DESCRIPTION_PATH") {
-            println!("cargo:rerun-if-changed={path}");
+    let mut builds = BuildsDescription::from_env()
+        .transpose()?
+        .unwrap_or_default();
 
-            let file = File::open(path).expect("Failed to open the builds description file");
-            rmp_serde::from_read(BufReader::new(file))
-                .expect("Failed to parse the builds description file")
-        } else {
-            Default::default()
-        };
-    // We sort them to put the builds requiring more features at the top.
-    builds.builds.sort_unstable_by(|build1, build2| {
-        build1.features.len().cmp(&build2.features.len()).reverse()
-    });
+    let source_build = builds.remove_source().ok_or_else(|| {
+        proc_exit::sysexits::DATA_ERR.with_message("The MessagePack file loaded from the environment variable MULTIVERS_BUILDS_DESCRIPTION_PATH must contain builds")
+    })?;
 
-    // The source is one requiring no or the minimum amount of features.
-    // We should make it configurable at some point.
-    let source_build = if let Some(source) = builds.builds.pop() {
-        source
-    } else {
-        println!("No builds");
-        std::process::exit(1);
-    };
-
-    let source = std::fs::read(source_build.path).unwrap();
+    let source = std::fs::read(&source_build.path).map_err(|_| {
+        proc_exit::sysexits::IO_ERR.with_message(format!(
+            "Failed to read source build {}",
+            source_build.path.display(),
+        ))
+    })?;
     let source_features = source_build.features;
 
     let patches = builds
         .builds
         .into_iter()
         .map(|build| {
-            println!("cargo:rerun-if-changed={}", build.path.display());
-
-            let target = std::fs::read(&build.path).unwrap();
-            let patch = bsdiff(&source, &target);
+            let target = std::fs::read(&build.path).map_err(|_| {
+                proc_exit::sysexits::IO_ERR
+                    .with_message(format!("Failed to read build {}", build.path.display(),))
+            })?;
+            let patch = bsdiff(&source, &target)?;
             let features = build.features;
-            quote! {
+            Ok(quote! {
                 Build {
                     compressed_build: &[
                         #(#patch),*
@@ -89,11 +143,11 @@ fn main() {
                     ],
                     source: false,
                 }
-            }
+            })
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>, _>>()?;
 
-    let source = compress(&source[..]);
+    let source = compress(&source[..])?;
 
     let n_builds = patches.len();
     let tokens = quote! {
@@ -111,7 +165,14 @@ fn main() {
         ];
     };
 
-    std::fs::write(dest_path, tokens.to_string()).unwrap();
+    std::fs::write(&dest_path, tokens.to_string()).map_err(|_| {
+        proc_exit::sysexits::IO_ERR.with_message(format!(
+            "Failed to write generated Rust file to {}",
+            dest_path.display(),
+        ))
+    })?;
 
     println!("cargo:rerun-if-changed=build.rs");
+
+    Ok(())
 }
