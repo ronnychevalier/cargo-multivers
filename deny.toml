@@ -102,6 +102,7 @@ unlicensed = "deny"
 allow = [
     "MIT",
     "Apache-2.0",
+    "BSD-3-Clause",
     "Unicode-DFS-2016",
     "Apache-2.0 WITH LLVM-exception",
 ]
