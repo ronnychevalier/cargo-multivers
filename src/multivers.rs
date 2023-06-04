@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -11,99 +10,20 @@ use escargot::CargoBuild;
 
 use serde::Serialize;
 
-use target_lexicon::{Architecture, Environment, Triple};
+use target_lexicon::{Environment, Triple};
 
-use indicatif::ProgressBar;
-use indicatif::ProgressStyle;
+use indicatif::{ProgressBar, ProgressStyle};
 
-use console::style;
-use console::Term;
+use itertools::Itertools;
 
-use rayon::prelude::IntoParallelRefIterator;
-use rayon::prelude::ParallelIterator;
+use console::{style, Term};
 
-use sha3::Digest;
-use sha3::Sha3_256;
+use sha3::{Digest, Sha3_256};
 
 use crate::cli::Args;
+use crate::features::{CpuFeatures, Cpus};
+use crate::metadata::MultiversMetadata;
 use crate::runner::RunnerBuilder;
-use crate::rustc::Rustc;
-
-fn is_cpu_for_target_valid(triple: &Triple, cpu: &str) -> bool {
-    // We need to ignore some CPUs, otherwise we get errors like `LLVM ERROR: 64-bit code requested on a subtarget that doesn't support it!`
-    // See https://github.com/rust-lang/rust/issues/81148
-    if triple.architecture == Architecture::X86_64
-        && [
-            "athlon",
-            "athlon-4",
-            "athlon-xp",
-            "athlon-mp",
-            "athlon-tbird",
-            "c3",
-            "c3-2",
-            "geode",
-            "i386",
-            "i486",
-            "i586",
-            "i686",
-            "k6",
-            "k6-2",
-            "k6-3",
-            "lakemont",
-            "pentium",
-            "pentium-m",
-            "pentium-mmx",
-            "pentium2",
-            "pentium3",
-            "pentium3m",
-            "pentium4",
-            "pentium4m",
-            "pentiumpro",
-            "pentiumprescott",
-            "prescott",
-            "winchip-c6",
-            "winchip2",
-            "yonah",
-        ]
-        .contains(&cpu)
-    {
-        return false;
-    }
-
-    true
-}
-
-pub fn cpu_features(args: &Args, target: &str) -> anyhow::Result<BTreeMap<String, Vec<String>>> {
-    let triple = Triple::from_str(target).context("Failed to parse the target")?;
-    Rustc::cpus_from_target(target)
-        .context("Failed to get the set of CPUs for the target")?
-        .par_iter()
-        .filter(|cpu| is_cpu_for_target_valid(&triple, cpu))
-        .filter_map(|cpu| Rustc::features_from_cpu(target, cpu).ok())
-        .filter_map(|mut features| {
-            for exclude in args.exclude_cpu_features.iter().flatten() {
-                features.remove(exclude);
-            }
-            if features.is_empty() {
-                return None;
-            }
-
-            Some(features)
-        })
-        .map(|features| {
-            let features_flags = features
-                .iter()
-                .fold(String::new(), |mut features, feature| {
-                    features.push('+');
-                    features.push_str(feature);
-                    features.push(',');
-                    features
-                });
-            let features_flags = features_flags.trim_end_matches(',');
-            Ok((features_flags.to_owned(), features.into_iter().collect()))
-        })
-        .collect::<anyhow::Result<BTreeMap<String, Vec<String>>>>()
-}
 
 #[derive(Serialize)]
 struct BuildDescription {
@@ -130,7 +50,7 @@ pub struct Multivers {
     workspace: clap_cargo::Workspace,
     output_directory: PathBuf,
     features: clap_cargo::Features,
-    cpu_features: BTreeMap<String, Vec<String>>,
+    cpus: Cpus,
     progress: ProgressBar,
     cargo_args: Vec<String>,
 }
@@ -148,8 +68,10 @@ impl Multivers {
         // See https://github.com/rust-lang/cargo/issues/4423
         let target = args.target()?;
 
-        let cpu_features = cpu_features(&args, &target)
-            .context("Failed to get the set of CPU features for the target")?;
+        let cpus = Cpus::builder(&target)
+            .context("Failed to get the set of CPU features for the target")?
+            .exclude_features(args.exclude_cpu_features.as_deref())
+            .build();
 
         let output_directory = metadata
             .target_directory
@@ -166,7 +88,7 @@ impl Multivers {
             workspace: args.workspace,
             output_directory,
             features: args.features,
-            cpu_features,
+            cpus,
             progress: indicatif::ProgressBar::new(0).with_style(
                 ProgressStyle::with_template(if Term::stdout().size().1 > 80 {
                     "{prefix:>12.cyan.bold} [{bar:57}] {pos}/{len} (time remaining {eta}) {wide_msg}"
@@ -180,24 +102,41 @@ impl Multivers {
     }
 
     fn build_package(&self, package: &Package) -> anyhow::Result<BuildsDescription> {
+        let triple = Triple::from_str(&self.target).context("Failed to parse the target")?;
         let manifest_path = package.manifest_path.as_std_path().to_path_buf();
         let features_list = self.features.features.join(" ");
         let mut rust_flags = std::env::var("RUST_FLAGS").unwrap_or_default();
 
-        self.progress.set_length(self.cpu_features.len() as u64);
-        self.progress.set_prefix("Building");
+        let metadata = MultiversMetadata::from_package(package)
+            .context("Failed to parse package's metadata")?;
+        let cpu_features: Vec<CpuFeatures> = if let Some(metadata) = metadata {
+            if let Some(target_metadata) = metadata.targets.get(&triple.architecture) {
+                target_metadata
+                    .cpus
+                    .iter()
+                    .filter_map(|cpu| self.cpus.get(cpu))
+                    .unique()
+                    .cloned()
+                    .collect()
+            } else {
+                self.cpus.features_sets().cloned().collect()
+            }
+        } else {
+            self.cpus.features_sets().cloned().collect()
+        };
 
-        let triple = Triple::from_str(&self.target).context("Failed to parse the target")?;
+        self.progress.set_length(cpu_features.len() as u64);
+        self.progress.set_prefix("Building");
 
         if triple.environment == Environment::Msvc {
             rust_flags.push_str(" -C link-args=/Brepro");
         };
 
         let mut hasher = Sha3_256::new();
-        let mut builds = self
-            .cpu_features
-            .iter()
-            .filter_map(move |(target_features_flags, cpu_features)| {
+        let mut builds = cpu_features
+            .into_iter()
+            .filter_map(|cpu_features| {
+                let target_features_flags = cpu_features.to_compiler_flags();
                 self.progress.println(format!(
                     "{:>12} {target_features_flags}",
                     style("Compiling").bold().green()
@@ -291,7 +230,7 @@ impl Multivers {
 
                 let build = BuildDescription {
                     path: output_path,
-                    features: cpu_features.clone(),
+                    features: cpu_features.into_vec(),
                     hash,
                     original_filename: bin_path.file_name().map(ToOwned::to_owned),
                 };
