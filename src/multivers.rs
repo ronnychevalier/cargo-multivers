@@ -274,18 +274,16 @@ impl Multivers {
             );
 
             let builds = self.build_package(selected_package)?;
-            if builds.builds.len() == 1 {
-                // SAFETY: The Vec is not empty, so the Option can only be Some.
-                let build = unsafe { builds.builds.first().unwrap_unchecked() };
 
-                let original_filename = builds
-                    .builds
-                    .iter()
-                    .find_map(|build| build.original_filename.clone())
-                    .unwrap_or_else(|| {
-                        format!("multivers-runner{}", std::env::consts::EXE_SUFFIX).into()
-                    });
+            let original_filename = builds
+                .builds
+                .iter()
+                .find_map(|build| build.original_filename.clone())
+                .unwrap_or_else(|| {
+                    format!("multivers-runner{}", std::env::consts::EXE_SUFFIX).into()
+                });
 
+            if let [build] = builds.builds.as_slice() {
                 let output_path = self
                     .output_directory
                     .join(&self.target)
@@ -305,46 +303,36 @@ impl Multivers {
                     style("Finished").bold().green(),
                     output_path.display()
                 );
+            } else {
+                let encoded =
+                    rmp_serde::to_vec_named(&builds).context("Failed to encode the builds")?;
 
-                continue;
+                let package_output_directory = self.output_directory.join(&selected_package.name);
+                std::fs::create_dir_all(&package_output_directory)
+                    .context("Failed to create temporary output directory")?;
+                let builds_path = package_output_directory.join("builds.msgpack");
+                std::fs::write(&builds_path, encoded)
+                    .with_context(|| format!("Failed to write to `{}`", builds_path.display()))?;
+
+                println!(
+                    "{:>12} {} versions compressed into a runner",
+                    style("Compiling").bold().green(),
+                    builds.builds.len(),
+                );
+
+                let bin_path = self.runner.build(
+                    &self.cargo_args,
+                    &self.target,
+                    &builds_path,
+                    &original_filename,
+                )?;
+
+                println!(
+                    "{:>12} ({})",
+                    style("Finished").bold().green(),
+                    bin_path.display()
+                );
             }
-
-            let original_filename = builds
-                .builds
-                .iter()
-                .find_map(|build| build.original_filename.clone())
-                .unwrap_or_else(|| {
-                    format!("multivers-runner{}", std::env::consts::EXE_SUFFIX).into()
-                });
-
-            let encoded =
-                rmp_serde::to_vec_named(&builds).context("Failed to encode the builds")?;
-
-            let package_output_directory = self.output_directory.join(&selected_package.name);
-            std::fs::create_dir_all(&package_output_directory)
-                .context("Failed to create temporary output directory")?;
-            let builds_path = package_output_directory.join("builds.msgpack");
-            std::fs::write(&builds_path, encoded)
-                .with_context(|| format!("Failed to write to `{}`", builds_path.display()))?;
-
-            println!(
-                "{:>12} {} versions compressed into a runner",
-                style("Compiling").bold().green(),
-                builds.builds.len(),
-            );
-
-            let bin_path = self.runner.build(
-                &self.cargo_args,
-                &self.target,
-                &builds_path,
-                &original_filename,
-            )?;
-
-            println!(
-                "{:>12} ({})",
-                style("Finished").bold().green(),
-                bin_path.display()
-            );
         }
 
         Ok(())
