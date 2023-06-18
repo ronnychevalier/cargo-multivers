@@ -10,6 +10,8 @@ keywords = ["performance", "optimization", "cargo", "cpu", "features"]
 rust-version = "1.65"
 repository = "https://github.com/ronnychevalier/cargo-multivers"
 include = [
+    "README.md",
+    "CHANGELOG.md",
     "/src/*",
     "/LICENSE*",
     "/multivers-runner/src/*.rs",
