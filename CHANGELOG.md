@@ -25,6 +25,8 @@ cpus = ["generic", "alderlake", "skylake", "sandybridge", "ivybridge"]
 - Updated dependencies to remove the duplicated ones
 - Removed unneeded unsafe code
 
+[0.4.1]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.4.0...v0.4.1
+
 ## [0.4.0] - 20-05-2023
 
 ### Changed
