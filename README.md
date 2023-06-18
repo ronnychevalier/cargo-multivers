@@ -40,7 +40,7 @@ it is mostly intended for the following use cases:
 
 ## Support
 
-This project has been tested on Windows and Linux (due to the use of `memfd_create`, only Linux >= v3.17 is supported).
+This project is tested on Windows and Linux (due to the use of `memfd_create`, only Linux >= v3.17 is supported).
 
 ## Installation
 

@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.4.1...HEAD
+
+## [0.4.1] - 18-06-2023
+
+### Added
+
+- You can now specify the list of CPUs you want to target with `--cpus` on the command line or by specifying it in your `Cargo.toml` like:
+
+```toml
+[package.metadata.multivers.x86_64]
+cpus = ["generic", "alderlake", "skylake", "sandybridge", "ivybridge"]
+```
+
+### Changed
+
+- Updated dependencies to remove the duplicated ones
+- Removed unneeded unsafe code
 
 ## [0.4.0] - 20-05-2023
 
