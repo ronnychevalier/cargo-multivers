@@ -43,6 +43,7 @@ struct BuildsDescription {
     builds: Vec<BuildDescription>,
 }
 
+/// Build multiple versions of the same binary, each with a different CPU features set, merged into a single portable optimized binary
 pub struct Multivers {
     metadata: Metadata,
     target: String,
@@ -68,7 +69,7 @@ impl Multivers {
         // See https://github.com/rust-lang/cargo/issues/4423
         let target = args.target()?;
 
-        let cpus = Cpus::builder(&target)
+        let cpus = Cpus::builder(&target, args.cpus)
             .context("Failed to get the set of CPU features for the target")?
             .exclude_features(args.exclude_cpu_features.as_deref())
             .build();
@@ -101,19 +102,17 @@ impl Multivers {
         })
     }
 
-    fn build_package(&self, package: &Package) -> anyhow::Result<BuildsDescription> {
-        let triple = Triple::from_str(&self.target).context("Failed to parse the target")?;
-        let manifest_path = package.manifest_path.as_std_path().to_path_buf();
-        let features_list = self.features.features.join(" ");
-        let mut rust_flags = std::env::var("RUST_FLAGS").unwrap_or_default();
-
-        let metadata = MultiversMetadata::from_package(package)
-            .context("Failed to parse package's metadata")?;
-        let cpu_features: Vec<CpuFeatures> = if let Some(metadata) = metadata {
-            if let Some(target_metadata) = metadata.targets.get(&triple.architecture) {
-                target_metadata
-                    .cpus
-                    .iter()
+    fn cpu_features(
+        &self,
+        triple: &Triple,
+        metadata: Option<&MultiversMetadata>,
+    ) -> Vec<CpuFeatures> {
+        if let Some(metadata) = metadata {
+            if let Some(cpus) = metadata
+                .get(&triple.architecture)
+                .and_then(|t| t.cpus.as_ref())
+            {
+                cpus.iter()
                     .filter_map(|cpu| self.cpus.get(cpu))
                     .unique()
                     .cloned()
@@ -123,7 +122,19 @@ impl Multivers {
             }
         } else {
             self.cpus.features_sets().cloned().collect()
-        };
+        }
+    }
+
+    fn build_package(&self, package: &Package) -> anyhow::Result<BuildsDescription> {
+        let triple: Triple =
+            Triple::from_str(&self.target).context("Failed to parse the target")?;
+        let manifest_path = package.manifest_path.as_std_path().to_path_buf();
+        let features_list = self.features.features.join(" ");
+        let mut rust_flags = std::env::var("RUST_FLAGS").unwrap_or_default();
+
+        let metadata = MultiversMetadata::from_package(package)
+            .context("Failed to parse package's metadata")?;
+        let cpu_features = self.cpu_features(&triple, metadata.as_ref());
 
         self.progress.set_length(cpu_features.len() as u64);
         self.progress.set_prefix("Building");

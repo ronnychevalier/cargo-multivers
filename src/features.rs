@@ -40,8 +40,11 @@ pub struct Cpus {
 }
 
 impl Cpus {
-    pub fn builder<'a>(target: impl Into<String>) -> anyhow::Result<CpusBuilder<'a>> {
-        CpusBuilder::new(target)
+    pub fn builder<'a>(
+        target: impl Into<String>,
+        cpus: Option<Vec<String>>,
+    ) -> anyhow::Result<CpusBuilder<'a>> {
+        CpusBuilder::new(target, cpus)
     }
 
     /// Returns a sorted and deduplicated iterator of CPU features set for each CPU
@@ -72,12 +75,16 @@ pub struct CpusBuilder<'a> {
 }
 
 impl<'a> CpusBuilder<'a> {
-    pub fn new(target: impl Into<String>) -> anyhow::Result<Self> {
+    pub fn new(target: impl Into<String>, cpus: Option<Vec<String>>) -> anyhow::Result<Self> {
         let target = target.into();
         let triple = Triple::from_str(&target).context("Failed to parse the target")?;
-        let iter = Rustc::cpus_from_target(&target)
-            .context("Failed to get the set of CPUs for the target")?
-            .into_par_iter();
+        let iter = if let Some(cpus) = cpus {
+            cpus
+        } else {
+            Rustc::cpus_from_target(&target)
+                .context("Failed to get the set of CPUs for the target")?
+        }
+        .into_par_iter();
 
         Ok(Self {
             iter,

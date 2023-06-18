@@ -7,8 +7,10 @@ pub enum Cargo {
     Multivers(Args),
 }
 
+/// Type of information to print on stdout
 #[derive(clap::ValueEnum, Clone, Copy)]
 pub enum Print {
+    /// Prints the list of CPU features supported by the target
     CpuFeatures,
 }
 
@@ -21,6 +23,15 @@ pub struct Args {
     /// Print information on stdout
     #[clap(long, value_name = "INFORMATION")]
     pub print: Option<Print>,
+
+    /// Comma-separated list of CPUs to use as a target
+    #[clap(
+        long,
+        use_value_delimiter = true,
+        value_delimiter = ',',
+        value_name = "CPUs"
+    )]
+    pub cpus: Option<Vec<String>>,
 
     /// Comma-separated list of CPU features to exclude from the builds
     #[clap(
@@ -46,6 +57,7 @@ pub struct Args {
 }
 
 impl Args {
+    /// Returns the target given on the command line or the default target that rustc uses to build if none is provided
     pub fn target(&self) -> anyhow::Result<String> {
         self.target
             .as_ref()

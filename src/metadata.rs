@@ -30,7 +30,7 @@ impl<'de> Deserialize<'de> for ArchitectureWrapper {
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct TargetMetadata {
-    pub cpus: Vec<String>,
+    pub cpus: Option<Vec<String>>,
 }
 
 impl<'de> Deserialize<'de> for TargetMetadata {
@@ -38,7 +38,7 @@ impl<'de> Deserialize<'de> for TargetMetadata {
     where
         D: Deserializer<'de>,
     {
-        let mut metadata = HashMap::<String, Vec<String>>::deserialize(deserializer)?;
+        let mut metadata = HashMap::<String, Option<Vec<String>>>::deserialize(deserializer)?;
         let cpus = metadata.remove("cpus").unwrap_or_default();
 
         Ok(Self { cpus })
@@ -55,7 +55,7 @@ impl<'de> Deserialize<'de> for TargetMetadata {
 /// ```
 #[derive(Debug)]
 pub struct MultiversMetadata {
-    pub targets: HashMap<Architecture, TargetMetadata>,
+    targets: HashMap<Architecture, TargetMetadata>,
 }
 
 impl MultiversMetadata {
@@ -67,12 +67,14 @@ impl MultiversMetadata {
 
         let mut metadata: HashMap<String, serde_json::Value> =
             serde_json::from_value(package.metadata.clone())?;
-        let metadata = match metadata.remove("multivers") {
-            Some(metadata) => metadata,
-            None => return Ok(None),
+        let Some(metadata) = metadata.remove("multivers") else {
+            return Ok(None);
         };
 
         let targets: HashMap<ArchitectureWrapper, _> = serde_json::from_value(metadata)?;
+        if targets.is_empty() {
+            return Ok(None);
+        }
 
         Ok(Some(Self {
             targets: targets
@@ -80,5 +82,9 @@ impl MultiversMetadata {
                 .map(|(key, value)| (key.0, value))
                 .collect(),
         }))
+    }
+
+    pub fn get(&self, k: &Architecture) -> Option<&TargetMetadata> {
+        self.targets.get(k)
     }
 }

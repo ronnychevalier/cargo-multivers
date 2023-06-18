@@ -22,7 +22,7 @@ fn main() -> anyhow::Result<()> {
     if matches!(args.print, Some(Print::CpuFeatures)) {
         let target = args.target()?;
 
-        let cpus = Cpus::builder(&target)
+        let cpus = Cpus::builder(&target, args.cpus)
             .context("Failed to get the set of CPU features for the target")?
             .build();
         let mut stdout = std::io::stdout().lock();
@@ -38,8 +38,5 @@ fn main() -> anyhow::Result<()> {
         "You must run cargo multivers with Rust nightly channel. For example, you can run: `cargo +nightly multivers`"
     );
 
-    let multivers = Multivers::from_args(args)?;
-    multivers.build()?;
-
-    Ok(())
+    Multivers::from_args(args)?.build()
 }
