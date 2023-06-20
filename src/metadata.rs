@@ -5,6 +5,8 @@ use cargo_metadata::Package;
 
 use serde::{Deserialize, Deserializer};
 
+use serde_json::Value;
+
 use target_lexicon::Architecture;
 
 #[derive(PartialEq, Eq, Hash, Debug)]
@@ -28,9 +30,17 @@ impl<'de> Deserialize<'de> for ArchitectureWrapper {
     }
 }
 
+/// The options set for a given target
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub struct TargetMetadata {
-    pub cpus: Option<Vec<String>>,
+    cpus: Option<Vec<String>>,
+}
+
+impl TargetMetadata {
+    /// Returns a reference to set of CPUs explicitly enabled for this target.
+    pub fn cpus(&self) -> Option<&[String]> {
+        self.cpus.as_deref()
+    }
 }
 
 impl<'de> Deserialize<'de> for TargetMetadata {
@@ -53,7 +63,7 @@ impl<'de> Deserialize<'de> for TargetMetadata {
 /// [package.metadata.multivers.x86_64]
 /// cpus = ["alderlake", "skylake", "sandybridge", "ivybridge"]
 /// ```
-#[derive(Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct MultiversMetadata {
     targets: HashMap<Architecture, TargetMetadata>,
 }
@@ -61,12 +71,17 @@ pub struct MultiversMetadata {
 impl MultiversMetadata {
     /// Parses the multivers metadata from a [`Package`].
     pub fn from_package(package: &Package) -> anyhow::Result<Option<Self>> {
-        if package.metadata.is_null() {
+        Self::from_value(&package.metadata)
+    }
+
+    /// Interprets a [`Value`] as a [`MultiversMetadata`].
+    pub fn from_value(value: &Value) -> anyhow::Result<Option<Self>> {
+        if value.is_null() {
             return Ok(None);
         }
 
         let mut metadata: HashMap<String, serde_json::Value> =
-            serde_json::from_value(package.metadata.clone())?;
+            serde_json::from_value(value.clone())?;
         let Some(metadata) = metadata.remove("multivers") else {
             return Ok(None);
         };
@@ -84,7 +99,101 @@ impl MultiversMetadata {
         }))
     }
 
+    /// Returns a reference to the [`TargetMetadata`] associated to a given [`Architecture`].
     pub fn get(&self, k: &Architecture) -> Option<&TargetMetadata> {
         self.targets.get(k)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use serde_json::json;
+
+    use target_lexicon::Architecture;
+
+    use crate::metadata::TargetMetadata;
+
+    use super::MultiversMetadata;
+
+    #[test]
+    fn test_target_empty_cpus() {
+        let value = json!({
+            "multivers": {
+                "x86_64": {
+                    "cpus": []
+                }
+            }
+        });
+
+        let metadata = MultiversMetadata::from_value(&value).unwrap().unwrap();
+        assert_eq!(
+            metadata,
+            MultiversMetadata {
+                targets: HashMap::from([(
+                    Architecture::X86_64,
+                    TargetMetadata {
+                        cpus: Some(Vec::new())
+                    }
+                ),])
+            }
+        );
+    }
+
+    #[test]
+    fn test_target_cpus_not_set() {
+        let value = json!({
+            "multivers": {
+                "x86_64": {
+                }
+            }
+        });
+
+        let metadata = MultiversMetadata::from_value(&value).unwrap().unwrap();
+        assert_eq!(
+            metadata,
+            MultiversMetadata {
+                targets: HashMap::from([(Architecture::X86_64, TargetMetadata { cpus: None }),])
+            }
+        );
+    }
+
+    #[test]
+    fn test_target_cpus_set() {
+        let value = json!({
+            "multivers": {
+                "x86_64": {
+                    "cpus": ["alderlake", "skylake", "sandybridge", "ivybridge"]
+                }
+            }
+        });
+
+        let metadata = MultiversMetadata::from_value(&value).unwrap().unwrap();
+        let target: &TargetMetadata = metadata.get(&Architecture::X86_64).unwrap();
+        assert_eq!(
+            target.cpus(),
+            Some(
+                &[
+                    "alderlake".into(),
+                    "skylake".into(),
+                    "sandybridge".into(),
+                    "ivybridge".into()
+                ][..]
+            )
+        );
+    }
+
+    #[test]
+    fn test_target_invalid() {
+        let value = json!({
+            "multivers": {
+                "x86-64": {
+                    "cpus": []
+                }
+            }
+        });
+
+        MultiversMetadata::from_value(&value).unwrap_err();
     }
 }

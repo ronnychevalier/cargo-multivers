@@ -22,7 +22,7 @@ use sha3::{Digest, Sha3_256};
 
 use crate::cli::Args;
 use crate::features::{CpuFeatures, Cpus};
-use crate::metadata::MultiversMetadata;
+use crate::metadata::{MultiversMetadata, TargetMetadata};
 use crate::runner::RunnerBuilder;
 
 #[derive(Serialize)]
@@ -110,7 +110,7 @@ impl Multivers {
         if let Some(metadata) = metadata {
             if let Some(cpus) = metadata
                 .get(&triple.architecture)
-                .and_then(|t| t.cpus.as_ref())
+                .and_then(TargetMetadata::cpus)
             {
                 cpus.iter()
                     .filter_map(|cpu| self.cpus.get(cpu))
