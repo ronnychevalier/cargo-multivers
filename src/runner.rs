@@ -66,10 +66,7 @@ impl RunnerBuilder {
             .find_map(|message| {
                 let message = match message {
                     Ok(message) => message,
-                    Err(e) => {
-                        eprintln!("{e}");
-                        return None;
-                    }
+                    Err(e) => return Some(Err(e)),
                 };
                 match message.decode() {
                     Ok(escargot::format::Message::CompilerArtifact(artifact)) => {
@@ -77,22 +74,26 @@ impl RunnerBuilder {
                             && artifact.target.crate_types == ["bin"]
                             && artifact.target.kind == ["bin"]
                         {
-                            Some(artifact.filenames.get(0)?.to_path_buf())
+                            Some(Ok(artifact.filenames.get(0)?.to_path_buf()))
                         } else {
                             None
                         }
                     }
-                    Err(e) => {
-                        eprintln!("{e}");
+                    Ok(escargot::format::Message::CompilerMessage(e)) => {
+                        if let Some(rendered) = e.message.rendered {
+                            eprint!("{rendered}");
+                        }
+
                         None
                     }
-                    _ => {
+                    Ok(_) => {
                         // Ignored
                         None
                     }
+                    Err(e) => Some(Err(e)),
                 }
             })
-            .ok_or_else(|| anyhow::anyhow!("Failed to build the runner"))?;
+            .ok_or_else(|| anyhow::anyhow!("Failed to build the runner"))??;
 
         let mut output_path = bin_path.clone();
         output_path.set_file_name(original_filename);

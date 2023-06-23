@@ -146,7 +146,7 @@ impl Multivers {
         let mut hasher = Sha3_256::new();
         let mut builds = cpu_features
             .into_iter()
-            .filter_map(|cpu_features| {
+            .map(|cpu_features| {
                 let target_features_flags = cpu_features.to_compiler_flags();
                 self.progress.println(format!(
                     "{:>12} {target_features_flags}",
@@ -170,55 +170,43 @@ impl Multivers {
                     cargo.features(&features_list)
                 };
 
-                let cargo = match cargo.exec() {
-                    Ok(cargo) => cargo,
-                    Err(e) => {
-                        eprintln!("Failed to build with features `{target_features_flags}`: {e}");
-                        return None;
-                    }
-                };
+                let cargo = cargo.exec()?;
 
-                let bin_path = cargo.into_iter().find_map(|message| {
-                    let message = match message {
-                        Ok(message) => message,
-                        Err(e) => {
-                            eprintln!(
-                                "Failed to build with features `{target_features_flags}`: {e}"
-                            );
-                            return None;
-                        }
-                    };
-                    match message.decode() {
-                        Ok(escargot::format::Message::CompilerArtifact(artifact)) => {
-                            if !artifact.profile.test
-                                && artifact.target.crate_types == ["bin"]
-                                && artifact.target.kind == ["bin"]
-                            {
-                                self.progress.inc(1);
-                                Some(artifact.filenames.get(0)?.to_path_buf())
-                            } else {
+                let bin_path = cargo
+                    .into_iter()
+                    .find_map(|message| {
+                        let message = match message {
+                            Ok(message) => message,
+                            Err(e) => return Some(Err(e)),
+                        };
+                        match message.decode() {
+                            Ok(escargot::format::Message::CompilerArtifact(artifact)) => {
+                                if !artifact.profile.test
+                                    && artifact.target.crate_types == ["bin"]
+                                    && artifact.target.kind == ["bin"]
+                                {
+                                    Some(Ok(artifact.filenames.get(0)?.to_path_buf()))
+                                } else {
+                                    None
+                                }
+                            }
+                            Ok(escargot::format::Message::CompilerMessage(e)) => {
+                                if let Some(rendered) = e.message.rendered {
+                                    eprint!("{rendered}");
+                                }
+
                                 None
                             }
-                        }
-                        Ok(escargot::format::Message::CompilerMessage(e)) => {
-                            if let Some(rendered) = e.message.rendered {
-                                eprint!("{rendered}");
+                            Ok(_) => {
+                                // Ignored
+                                None
                             }
+                            Err(e) => Some(Err(e)),
+                        }
+                    })
+                    .ok_or_else(|| anyhow::anyhow!("Failed to find a binary"))??;
 
-                            None
-                        }
-                        Err(e) => {
-                            eprintln!(
-                                "Failed to build with features `{target_features_flags}`: {e}"
-                            );
-                            None
-                        }
-                        _ => {
-                            // Ignored
-                            None
-                        }
-                    }
-                })?;
+                self.progress.inc(1);
 
                 hasher.update(target_features_flags.as_bytes());
                 let filename = format!("{:x}", hasher.finalize_reset());
@@ -230,9 +218,7 @@ impl Multivers {
                     .join(filename);
                 output_path.set_extension(std::env::consts::EXE_EXTENSION);
 
-                if let Err(e) = std::fs::rename(&bin_path, &output_path) {
-                    return Some(Err(e.into()));
-                }
+                std::fs::rename(&bin_path, &output_path)?;
 
                 let hash = std::fs::read(&output_path).ok().map(|bytes| {
                     hasher.update(&bytes);
@@ -246,7 +232,7 @@ impl Multivers {
                     original_filename: bin_path.file_name().map(ToOwned::to_owned),
                 };
 
-                Some(Ok(build))
+                Ok(build)
             })
             .collect::<anyhow::Result<Vec<_>>>()?;
         builds.sort_unstable_by(|build1, build2| {

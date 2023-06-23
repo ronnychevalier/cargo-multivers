@@ -16,7 +16,7 @@ use crate::rustc::Rustc;
 pub struct CpuFeatures(BTreeSet<String>);
 
 impl CpuFeatures {
-    /// Builds a string of CPU feature flags that can be given to  `rustc -C target-feature=` (e.g., `+aes,+avx,+sse`)
+    /// Builds a string of CPU feature flags that can be given to `rustc -C target-feature=` (e.g., `+aes,+avx,+sse`)
     pub fn to_compiler_flags(&self) -> String {
         let features_flags = self.0.iter().fold(String::new(), |mut features, feature| {
             features.push('+');
