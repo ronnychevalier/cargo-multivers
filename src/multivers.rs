@@ -20,6 +20,7 @@ use console::{style, Term};
 
 use sha3::{Digest, Sha3_256};
 
+use crate::cargo::CommandMessagesExt;
 use crate::cli::Args;
 use crate::features::{CpuFeatures, Cpus};
 use crate::metadata::{MultiversMetadata, TargetMetadata};
@@ -173,38 +174,8 @@ impl Multivers {
                 let cargo = cargo.exec()?;
 
                 let bin_path = cargo
-                    .into_iter()
-                    .find_map(|message| {
-                        let message = match message {
-                            Ok(message) => message,
-                            Err(e) => return Some(Err(e)),
-                        };
-                        match message.decode() {
-                            Ok(escargot::format::Message::CompilerArtifact(artifact)) => {
-                                if !artifact.profile.test
-                                    && artifact.target.crate_types == ["bin"]
-                                    && artifact.target.kind == ["bin"]
-                                {
-                                    Some(Ok(artifact.filenames.get(0)?.to_path_buf()))
-                                } else {
-                                    None
-                                }
-                            }
-                            Ok(escargot::format::Message::CompilerMessage(e)) => {
-                                if let Some(rendered) = e.message.rendered {
-                                    eprint!("{rendered}");
-                                }
-
-                                None
-                            }
-                            Ok(_) => {
-                                // Ignored
-                                None
-                            }
-                            Err(e) => Some(Err(e)),
-                        }
-                    })
-                    .ok_or_else(|| anyhow::anyhow!("Failed to find a binary"))??;
+                    .find_executable()?
+                    .ok_or_else(|| anyhow::anyhow!("Failed to find a binary"))?;
 
                 self.progress.inc(1);
 

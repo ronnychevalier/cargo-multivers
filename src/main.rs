@@ -9,6 +9,7 @@ use crate::features::Cpus;
 use crate::multivers::Multivers;
 use crate::rustc::Rustc;
 
+mod cargo;
 mod cli;
 mod features;
 mod metadata;

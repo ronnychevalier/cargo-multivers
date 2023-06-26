@@ -5,6 +5,8 @@ use anyhow::Context;
 
 use escargot::CargoBuild;
 
+use crate::cargo::CommandMessagesExt;
+
 const RUNNER_CARGO_TOML: &[u8] = include_bytes!("../multivers-runner/Cargo.toml.template");
 const RUNNER_CARGO_LOCK: &[u8] = include_bytes!("../multivers-runner/Cargo.lock");
 const RUNNER_BUILD_SCRIPT: &[u8] = include_bytes!("../multivers-runner/build.rs");
@@ -62,38 +64,8 @@ impl RunnerBuilder {
             .context("Failed to execute cargo to build the runner")?;
 
         let bin_path = cargo
-            .into_iter()
-            .find_map(|message| {
-                let message = match message {
-                    Ok(message) => message,
-                    Err(e) => return Some(Err(e)),
-                };
-                match message.decode() {
-                    Ok(escargot::format::Message::CompilerArtifact(artifact)) => {
-                        if !artifact.profile.test
-                            && artifact.target.crate_types == ["bin"]
-                            && artifact.target.kind == ["bin"]
-                        {
-                            Some(Ok(artifact.filenames.get(0)?.to_path_buf()))
-                        } else {
-                            None
-                        }
-                    }
-                    Ok(escargot::format::Message::CompilerMessage(e)) => {
-                        if let Some(rendered) = e.message.rendered {
-                            eprint!("{rendered}");
-                        }
-
-                        None
-                    }
-                    Ok(_) => {
-                        // Ignored
-                        None
-                    }
-                    Err(e) => Some(Err(e)),
-                }
-            })
-            .ok_or_else(|| anyhow::anyhow!("Failed to build the runner"))??;
+            .find_executable()?
+            .ok_or_else(|| anyhow::anyhow!("Failed to build the runner"))?;
 
         let mut output_path = bin_path.clone();
         output_path.set_file_name(original_filename);
