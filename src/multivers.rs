@@ -273,12 +273,12 @@ impl Multivers {
                 );
             } else {
                 let encoded =
-                    rmp_serde::to_vec_named(&builds).context("Failed to encode the builds")?;
+                    serde_json::to_vec_pretty(&builds).context("Failed to encode the builds")?;
 
                 let package_output_directory = self.output_directory.join(&selected_package.name);
                 std::fs::create_dir_all(&package_output_directory)
                     .context("Failed to create temporary output directory")?;
-                let builds_path = package_output_directory.join("builds.msgpack");
+                let builds_path = package_output_directory.join("builds.json");
                 std::fs::write(&builds_path, encoded)
                     .with_context(|| format!("Failed to write to `{}`", builds_path.display()))?;
 

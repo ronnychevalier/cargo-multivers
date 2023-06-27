@@ -1,6 +1,6 @@
 //! Build script that generates a Rust file that contains a compressed source binary and a set of compressed patches for each CPU features set.
 //!
-//! It reads a `MessagePack` file that contains a set of paths to executables and their dependency on CPU features
+//! It reads a JSON file that contains a set of paths to executables and their dependency on CPU features
 //! from the environment variable `MULTIVERS_BUILDS_DESCRIPTION_PATH`.
 //! Then, it generates a the Rust file that contains the source and the patches.
 use std::fs::File;
@@ -30,7 +30,7 @@ struct BuildsDescription {
 }
 
 impl BuildsDescription {
-    /// Loads a [`BuildsDescription`] from a `MessagePack` file located at the path in the environment variable `MULTIVERS_BUILDS_DESCRIPTION_PATH`
+    /// Loads a [`BuildsDescription`] from a JSON file located at the path in the environment variable `MULTIVERS_BUILDS_DESCRIPTION_PATH`
     pub fn from_env() -> Option<Result<Self, Exit>> {
         let path = option_env!("MULTIVERS_BUILDS_DESCRIPTION_PATH")?;
 
@@ -47,12 +47,13 @@ impl BuildsDescription {
                 path.display()
             ))
         })?;
-        let mut builds_desc: Self = rmp_serde::from_read(BufReader::new(file)).map_err(|_| {
-            proc_exit::sysexits::DATA_ERR.with_message(format!(
-                "Failed to parse the builds description file {}",
-                path.display(),
-            ))
-        })?;
+        let mut builds_desc: Self =
+            serde_json::from_reader(BufReader::new(file)).map_err(|_| {
+                proc_exit::sysexits::DATA_ERR.with_message(format!(
+                    "Failed to parse the builds description file {}",
+                    path.display(),
+                ))
+            })?;
 
         builds_desc.sort_by_features();
         builds_desc.print_rerun();
@@ -112,7 +113,7 @@ fn main() -> Result<(), Exit> {
         .unwrap_or_default();
 
     let source_build = builds.remove_source().ok_or_else(|| {
-        proc_exit::sysexits::DATA_ERR.with_message("The MessagePack file loaded from the environment variable MULTIVERS_BUILDS_DESCRIPTION_PATH must contain builds")
+        proc_exit::sysexits::DATA_ERR.with_message("The JSON file loaded from the environment variable MULTIVERS_BUILDS_DESCRIPTION_PATH must contain builds")
     })?;
 
     let source = std::fs::read(&source_build.path).map_err(|_| {
