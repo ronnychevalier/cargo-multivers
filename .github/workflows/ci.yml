@@ -33,7 +33,7 @@ jobs:
     - name: Default features
       run: cargo test --workspace
   msrv:
-    name: "Check MSRV: 1.65.0"
+    name: "Check MSRV: 1.66.0"
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
@@ -41,7 +41,7 @@ jobs:
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: 1.65.0  # MSRV
+        toolchain: 1.66.0  # MSRV
         profile: minimal
         override: true
     - uses: Swatinem/rust-cache@v2
@@ -74,7 +74,7 @@ jobs:
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: 1.65.0  # MSRV
+        toolchain: 1.66.0  # MSRV
         profile: minimal
         override: true
         components: clippy
@@ -90,4 +90,4 @@ jobs:
     - uses: actions/checkout@v3
     - uses: EmbarkStudios/cargo-deny-action@v1
       with:
-        rust-version: "1.65.0"
+        rust-version: "1.66.0"
