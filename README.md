@@ -38,9 +38,14 @@ it is mostly intended for the following use cases:
 - To build a project that is distributed to multiple users with different microarchitectures (e.g., a release version of your project).
 - To build a program that performs long running tasks (e.g., heavy computations, a server, or a game).
 
-## Support
+## Supported Operating Systems
 
 This project is tested on Windows and Linux (due to the use of `memfd_create`, only Linux >= v3.17 is supported).
+
+## Supported Architectures
+
+In theory the following architectures are supported: x86, x86_64, arm, aarch64, riscv32, riscv64, powerpc, powerpc64, mips, and mips64.
+But only x86_64 is tested.
 
 ## Installation
 
