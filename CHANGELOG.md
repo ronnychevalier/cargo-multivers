@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `cargo multivers` now stops on the first error it encounters.
+- The file that contains the list of versions built given to the runner is now in JSON.
+- Updated dependencies to fix build with Rust nightly and proc-macro2.
+
+### Fixed
+
+- Removed duplicated error messages.
+- Do not display a false ETA for the first build.
+
 [Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.4.1...HEAD
 
 ## [0.4.1] - 18-06-2023
