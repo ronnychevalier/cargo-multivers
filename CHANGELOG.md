@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `cargo multivers` now stops on the first error it encounters.
 - The file that contains the list of versions built given to the runner is now in JSON.
 - Updated dependencies to fix build with Rust nightly and proc-macro2.
+- MSRV is now 1.66.
 
 ### Fixed
 

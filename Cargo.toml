@@ -7,7 +7,7 @@ readme = "README.md"
 license = "MIT OR Apache-2.0"
 categories = ["hardware-support", "command-line-utilities", "development-tools::cargo-plugins"]
 keywords = ["performance", "optimization", "cargo", "cpu", "features"]
-rust-version = "1.65"
+rust-version = "1.66"
 repository = "https://github.com/ronnychevalier/cargo-multivers"
 include = [
     "README.md",
