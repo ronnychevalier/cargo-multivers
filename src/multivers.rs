@@ -1,6 +1,7 @@
 use std::ffi::OsString;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::time::Duration;
 
 use anyhow::Context;
 
@@ -83,6 +84,14 @@ impl Multivers {
         let runner = RunnerBuilder::generate_crate_sources(output_directory.clone())
             .context("Failed to generate the source files of the runner")?;
 
+        let progress = indicatif::ProgressBar::new(0).with_style(
+            ProgressStyle::with_template(
+                "{prefix:>12.cyan.bold} [{bar:57}] {pos}/{len} {spinner}",
+            )?
+            .progress_chars("=> "),
+        );
+        progress.enable_steady_tick(Duration::from_millis(200));
+
         Ok(Self {
             metadata,
             target,
@@ -91,15 +100,8 @@ impl Multivers {
             output_directory,
             features: args.features,
             cpus,
-            progress: indicatif::ProgressBar::new(0).with_style(
-                ProgressStyle::with_template(if Term::stdout().size().1 > 80 {
-                    "{prefix:>12.cyan.bold} [{bar:57}] {pos}/{len} (time remaining {eta}) {wide_msg}"
-                } else {
-                    "{prefix:>12.cyan.bold} [{bar:57}] {pos}/{len}"
-                })?
-                .progress_chars("=> "),
-            ),
-            cargo_args: args.args
+            progress,
+            cargo_args: args.args,
         })
     }
 
@@ -144,10 +146,24 @@ impl Multivers {
             rust_flags.push_str(" -C link-args=/Brepro");
         };
 
+        let mut final_style_set = false;
         let mut hasher = Sha3_256::new();
         let mut builds = cpu_features
             .into_iter()
-            .map(|cpu_features| {
+            .enumerate()
+            .map(|(i, cpu_features)| {
+                if !final_style_set && i > 0 {
+                    self.progress.disable_steady_tick();
+                    self.progress.set_style(
+                        ProgressStyle::with_template(if Term::stdout().size().1 > 80 {
+                            "{prefix:>12.cyan.bold} [{bar:57}] {pos}/{len} (time remaining {eta}) {wide_msg}"
+                        } else {
+                            "{prefix:>12.cyan.bold} [{bar:57}] {pos}/{len}"
+                        })?
+                        .progress_chars("=> "),
+                    );
+                    final_style_set = true;
+                }
                 let target_features_flags = cpu_features.to_compiler_flags();
                 self.progress.println(format!(
                     "{:>12} {target_features_flags}",
