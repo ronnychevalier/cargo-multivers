@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.5.0...HEAD
+
+## [0.5.0] - 12-08-2023
+
 ### Changed
 
 - `cargo multivers` now stops on the first error it encounters.
@@ -19,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Removed duplicated error messages.
 - Do not display a false ETA for the first build.
 
-[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.4.1...HEAD
+[0.5.0]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.4.1...v0.5.0
 
 ## [0.4.1] - 18-06-2023
 
