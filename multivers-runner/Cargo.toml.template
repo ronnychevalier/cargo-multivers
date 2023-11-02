@@ -16,7 +16,7 @@ bzip2 = { version = "0.4", features = ["static"] }
 tempfile = "3.5"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-rustix = { version = "0.37", default-features = false, features = ["fs"] }
+rustix = { version = "0.38", default-features = false, features = ["fs"] }
 libc = "0.2"
 
 [build-dependencies]
@@ -24,7 +24,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 quote = { version = "1.0", default-features = false }
 qbsdiff = "1.4.0"
-bzip2 = "0.4"
+bzip2 = { version = "0.4", features = ["static"] }
 proc-exit = "2"
 
 [profile.release]
