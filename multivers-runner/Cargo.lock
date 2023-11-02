@@ -214,14 +214,24 @@ dependencies = [
  "bzip2",
  "cfg-if",
  "libc",
+ "notstd_detect",
  "proc-exit",
  "qbsdiff",
  "quote",
  "rustix 0.38.4",
  "serde",
  "serde_json",
- "std_detect",
  "tempfile",
+]
+
+[[package]]
+name = "notstd_detect"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "960d9b925370e7c505c3cc3c02b427627fa3e883f6f25da064fcd6446735547d"
+dependencies = [
+ "cfg-if",
+ "libc",
 ]
 
 [[package]]
@@ -393,15 +403,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "std_detect"
-version = "0.1.5"
-source = "git+https://github.com/rust-lang/stdarch?rev=3a96d41a06b2d939fa743d7010f911aa1afcba39#3a96d41a06b2d939fa743d7010f911aa1afcba39"
-dependencies = [
- "cfg-if",
- "libc",
 ]
 
 [[package]]

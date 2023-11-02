@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 cfg-if = "1"
-std_detect = { git = "https://github.com/rust-lang/stdarch", rev = "3a96d41a06b2d939fa743d7010f911aa1afcba39", package = "std_detect" }
+notstd_detect = "0.2.0"
 proc-exit = "2"
 qbsdiff = "1.4.0"
 bzip2 = { version = "0.4", features = ["static"] }

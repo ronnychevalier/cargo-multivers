@@ -38,7 +38,7 @@ impl<'a> Build<'a> {
 
     /// Finds a version that matches the CPU features of the host
     pub fn find() -> Self {
-        let supported_features: Vec<&str> = std_detect::detect::features()
+        let supported_features: Vec<&str> = notstd_detect::detect::features()
             .filter_map(|(feature, supported)| supported.then_some(feature))
             .collect();
 

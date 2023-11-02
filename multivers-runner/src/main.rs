@@ -1,4 +1,4 @@
-#![feature(stdsimd)]
+#![feature(stdarch_internal)]
 #![no_main]
 
 mod build;
