@@ -61,6 +61,12 @@ pub trait Executable {
     ///
     /// The arguments (`argc`, `argv`, and `envp`) can be used by the implementation
     /// for optimization purposes, but they may be ignored (and fetched with [`std::env::args_os()`]).
+    ///
+    /// # Safety
+    ///
+    /// - `argc` must never be negative.
+    /// - `argv` and `envp` must be null-terminated arrays of valid pointers to null-terminated strings.
+    /// - Each element of `argv` and `envp` must be valid for reads of bytes up to and including the null terminator.
     unsafe fn exec(
         self,
         argc: i32,
