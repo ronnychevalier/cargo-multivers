@@ -19,3 +19,5 @@ opt-level = "z"
 [profile.dev]
 panic = "abort"
 
+[package.metadata.multivers.x86_64]
+cpus = ["generic", "alderlake", "skylake", "sandybridge", "ivybridge"]

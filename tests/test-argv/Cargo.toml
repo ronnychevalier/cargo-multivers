@@ -8,3 +8,7 @@ publish = false
 
 [profile.release]
 strip = "symbols"
+panic = "abort"
+
+[package.metadata.multivers.x86_64]
+cpus = ["generic", "alderlake", "skylake", "sandybridge", "ivybridge"]
