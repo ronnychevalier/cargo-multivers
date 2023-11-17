@@ -7,14 +7,6 @@ use escargot::CargoBuild;
 
 use crate::cargo::CommandMessagesExt;
 
-const RUNNER_CARGO_TOML: &[u8] = include_bytes!("../multivers-runner/Cargo.toml.template");
-const RUNNER_CARGO_LOCK: &[u8] = include_bytes!("../multivers-runner/Cargo.lock");
-const RUNNER_BUILD_SCRIPT: &[u8] = include_bytes!("../multivers-runner/build.rs");
-const RUNNER_MAIN: &[u8] = include_bytes!("../multivers-runner/src/main.rs");
-const RUNNER_BUILD: &[u8] = include_bytes!("../multivers-runner/src/build.rs");
-const RUNNER_BUILD_LINUX: &[u8] = include_bytes!("../multivers-runner/src/build/linux.rs");
-const RUNNER_BUILD_GENERIC: &[u8] = include_bytes!("../multivers-runner/src/build/generic.rs");
-
 pub struct RunnerBuilder {
     output_directory: PathBuf,
     manifest_path: PathBuf,
@@ -23,19 +15,42 @@ pub struct RunnerBuilder {
 impl RunnerBuilder {
     /// Generates the sources of the crate to build the runner
     pub fn generate_crate_sources(output_directory: PathBuf) -> anyhow::Result<Self> {
-        let root_directory = output_directory.join("multivers-runner");
+        let root_directory = output_directory.join("package-runner");
         let src_directory = root_directory.join("src");
-        let build_directory = src_directory.join("build");
         let manifest_path = root_directory.join("Cargo.toml");
+        let main_path = src_directory.join("main.rs");
+        let multivers_runner_dependency = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("multivers-runner")
+            .to_string_lossy()
+            .replace('\\', "/");
+        let manifest = format!(
+            r#"
+        [package]
+        name = "package-multivers"
+        version = "0.1.0"
+        edition = "2021"
+        
+        [dependencies]
+        multivers-runner = {{ version = "0.1", path = "{}" }}
 
-        std::fs::create_dir_all(&build_directory)?;
-        std::fs::write(src_directory.join("main.rs"), RUNNER_MAIN)?;
-        std::fs::write(src_directory.join("build.rs"), RUNNER_BUILD)?;
-        std::fs::write(build_directory.join("linux.rs"), RUNNER_BUILD_LINUX)?;
-        std::fs::write(build_directory.join("generic.rs"), RUNNER_BUILD_GENERIC)?;
-        std::fs::write(&manifest_path, RUNNER_CARGO_TOML)?;
-        std::fs::write(root_directory.join("Cargo.lock"), RUNNER_CARGO_LOCK)?;
-        std::fs::write(root_directory.join("build.rs"), RUNNER_BUILD_SCRIPT)?;
+        [profile.release]
+        lto = true
+        strip = "symbols"
+        opt-level = "z"
+        codegen-units = 1
+        panic = "abort"
+        "#,
+            multivers_runner_dependency
+        );
+        let main = b"
+        #![no_std]
+        #![no_main]
+        pub use multivers_runner::main;
+        ";
+
+        std::fs::create_dir_all(&src_directory)?;
+        std::fs::write(&manifest_path, manifest)?;
+        std::fs::write(main_path, main)?;
 
         Ok(Self {
             output_directory,

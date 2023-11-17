@@ -3,7 +3,6 @@ name = "multivers-runner"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-publish = false
 
 [dependencies]
 cfg-if = "1"
@@ -26,10 +25,3 @@ quote = { version = "1.0", default-features = false }
 qbsdiff = "1.4.0"
 bzip2 = { version = "0.4", features = ["static"] }
 proc-exit = "2"
-
-[profile.release]
-lto = true
-strip = "symbols"
-opt-level = "z"
-codegen-units = 1
-panic = "abort"
