@@ -34,6 +34,7 @@ impl BuildsDescription {
     pub fn from_env() -> Option<Result<Self, Exit>> {
         let path = option_env!("MULTIVERS_BUILDS_DESCRIPTION_PATH")?;
 
+        println!("cargo:rerun-if-env-changed=MULTIVERS_BUILDS_DESCRIPTION_PATH");
         println!("cargo:rerun-if-changed={path}");
 
         Some(Self::from_path(path))
