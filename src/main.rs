@@ -1,3 +1,4 @@
+//! Cargo subcommand to build multiple versions of the same binary, each with a different CPU features set, merged into a single portable optimized binary.
 use std::io::Write;
 
 use anyhow::Context;

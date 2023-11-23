@@ -50,7 +50,6 @@
 #![feature(stdarch_internal)]
 #![cfg_attr(not(test), no_main)]
 #![cfg_attr(test, allow(dead_code))]
-#![warn(missing_docs)]
 
 mod build;
 

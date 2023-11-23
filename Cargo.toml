@@ -18,7 +18,7 @@ keywords = [
     "features",
     "multivers",
 ]
-rust-version = "1.70"
+rust-version = "1.74"
 repository = "https://github.com/ronnychevalier/cargo-multivers"
 include = ["README.md", "CHANGELOG.md", "/src/*", "/LICENSE*"]
 
@@ -29,6 +29,12 @@ exclude = [
     "tests/test-nothing",
     "tests/test-useless-computation",
 ]
+
+[workspace.lints.rust]
+missing_docs = "warn"
+
+[lints]
+workspace = true
 
 [dependencies]
 anyhow = "1"
