@@ -3,6 +3,7 @@
 //! It reads a JSON file that contains a set of paths to executables and their dependency on CPU features
 //! from the environment variable `MULTIVERS_BUILDS_DESCRIPTION_PATH`.
 //! Then, it generates a the Rust file that contains the source and the patches.
+#![cfg_attr(feature = "cargo-clippy", allow(dead_code))]
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
@@ -62,7 +63,7 @@ impl BuildsDescription {
         Ok(builds_desc)
     }
 
-    pub fn remove_source(&mut self) -> Option<BuildDescription> {
+    fn remove_source(&mut self) -> Option<BuildDescription> {
         // The source is one requiring no or the minimum amount of features.
         // Since we sorted the builds by features, we just have to remove the last element.
         // We should make it configurable at some point.
@@ -82,6 +83,89 @@ impl BuildsDescription {
         for build in &self.builds {
             let _ = writeln!(stdout, "cargo:rerun-if-changed={}", build.path.display());
         }
+    }
+
+    #[cfg(not(feature = "cargo-clippy"))]
+    pub fn generate_sources(mut self, dest_path: &Path) -> Result<(), Exit> {
+        let source_build = self.remove_source().ok_or_else(|| {
+                proc_exit::sysexits::DATA_ERR.with_message("The JSON file loaded from the environment variable MULTIVERS_BUILDS_DESCRIPTION_PATH must contain builds")
+            })?;
+        let source = std::fs::read(&source_build.path).map_err(|_| {
+            proc_exit::sysexits::IO_ERR.with_message(format!(
+                "Failed to read source build {}",
+                source_build.path.display(),
+            ))
+        })?;
+        let source_features = source_build.features;
+        let patches = self
+            .builds
+            .into_iter()
+            .map(|build| {
+                let target = std::fs::read(&build.path).map_err(|_| {
+                    proc_exit::sysexits::IO_ERR
+                        .with_message(format!("Failed to read build {}", build.path.display(),))
+                })?;
+                let patch = bsdiff(&source, &target)?;
+                let features = build.features;
+                Ok(quote! {
+                    Build {
+                        compressed_build: &[
+                            #(#patch),*
+                        ],
+                        features: &[
+                            #(#features),*
+                        ],
+                        source: false,
+                    }
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let source = compress(&source[..])?;
+        let n_builds = patches.len();
+        let tokens = quote! {
+            const SOURCE: Build = Build {
+                compressed_build: &[
+                    #(#source),*
+                ],
+                features: &[
+                    #(#source_features),*
+                ],
+                source: true,
+            };
+            const PATCHES: [Build; #n_builds] = [
+                #(#patches),*
+            ];
+        };
+
+        std::fs::write(dest_path, tokens.to_string()).map_err(|_| {
+            proc_exit::sysexits::IO_ERR.with_message(format!(
+                "Failed to write generated Rust file to {}",
+                dest_path.display(),
+            ))
+        })?;
+
+        Ok(())
+    }
+
+    #[cfg(feature = "cargo-clippy")]
+    pub fn generate_sources(self, dest_path: &Path) -> Result<(), Exit> {
+        let tokens = quote! {
+            const SOURCE: Build = Build {
+                compressed_build: &[],
+                features: &[],
+                source: true,
+            };
+            const PATCHES: [Build; 0] = [];
+        };
+
+        std::fs::write(dest_path, tokens.to_string()).map_err(|_| {
+            proc_exit::sysexits::IO_ERR.with_message(format!(
+                "Failed to write generated Rust file to {}",
+                dest_path.display(),
+            ))
+        })?;
+
+        Ok(())
     }
 }
 
@@ -104,77 +188,18 @@ fn bsdiff(source: &[u8], target: &[u8]) -> Result<Vec<u8>, Exit> {
 }
 
 fn main() -> Result<(), Exit> {
+    println!("cargo:rerun-if-changed=build.rs");
+
     let out_dir = std::env::var_os("OUT_DIR").ok_or_else(|| {
         proc_exit::sysexits::SOFTWARE_ERR.with_message("Missing OUT_DIR environment variable")
     })?;
     let dest_path = Path::new(&out_dir).join("builds.rs");
 
-    let mut builds = BuildsDescription::from_env()
+    let builds = BuildsDescription::from_env()
         .transpose()?
         .unwrap_or_default();
 
-    let source_build = builds.remove_source().ok_or_else(|| {
-        proc_exit::sysexits::DATA_ERR.with_message("The JSON file loaded from the environment variable MULTIVERS_BUILDS_DESCRIPTION_PATH must contain builds")
-    })?;
-
-    let source = std::fs::read(&source_build.path).map_err(|_| {
-        proc_exit::sysexits::IO_ERR.with_message(format!(
-            "Failed to read source build {}",
-            source_build.path.display(),
-        ))
-    })?;
-    let source_features = source_build.features;
-
-    let patches = builds
-        .builds
-        .into_iter()
-        .map(|build| {
-            let target = std::fs::read(&build.path).map_err(|_| {
-                proc_exit::sysexits::IO_ERR
-                    .with_message(format!("Failed to read build {}", build.path.display(),))
-            })?;
-            let patch = bsdiff(&source, &target)?;
-            let features = build.features;
-            Ok(quote! {
-                Build {
-                    compressed_build: &[
-                        #(#patch),*
-                    ],
-                    features: &[
-                        #(#features),*
-                    ],
-                    source: false,
-                }
-            })
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-
-    let source = compress(&source[..])?;
-
-    let n_builds = patches.len();
-    let tokens = quote! {
-        const SOURCE: Build = Build {
-            compressed_build: &[
-                #(#source),*
-            ],
-            features: &[
-                #(#source_features),*
-            ],
-            source: true,
-        };
-        const PATCHES: [Build; #n_builds] = [
-            #(#patches),*
-        ];
-    };
-
-    std::fs::write(&dest_path, tokens.to_string()).map_err(|_| {
-        proc_exit::sysexits::IO_ERR.with_message(format!(
-            "Failed to write generated Rust file to {}",
-            dest_path.display(),
-        ))
-    })?;
-
-    println!("cargo:rerun-if-changed=build.rs");
+    builds.generate_sources(&dest_path)?;
 
     Ok(())
 }
