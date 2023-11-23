@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - The runner no longer depends on a Git repository.
-  `std_detect` has been forked and an up-to-date version called `notstd_detect` has been uploaded to `crates.io` to access the requires features.
+  `std_detect` has been forked and an up-to-date version called `notstd_detect` has been uploaded to `crates.io` to access the required features.
 - Update dependencies.
 
 [Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.5.0...HEAD
