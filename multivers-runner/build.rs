@@ -2,7 +2,7 @@
 //!
 //! It reads a JSON file that contains a set of paths to executables and their dependency on CPU features
 //! from the environment variable `MULTIVERS_BUILDS_DESCRIPTION_PATH`.
-//! Then, it generates a the Rust file that contains the source and the patches.
+//! Then, it generates a Rust file that contains the source and the patches.
 #![cfg_attr(feature = "cargo-clippy", allow(dead_code))]
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};

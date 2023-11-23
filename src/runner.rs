@@ -43,7 +43,6 @@ impl RunnerBuilder {
             multivers_runner_dependency
         );
         let main = b"
-        #![no_std]
         #![no_main]
         pub use multivers_runner::main;
         ";
