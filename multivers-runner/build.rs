@@ -85,18 +85,27 @@ impl BuildsDescription {
         }
     }
 
-    #[cfg(not(feature = "cargo-clippy"))]
     pub fn generate_sources(mut self, dest_path: &Path) -> Result<(), Exit> {
-        let source_build = self.remove_source().ok_or_else(|| {
-                proc_exit::sysexits::DATA_ERR.with_message("The JSON file loaded from the environment variable MULTIVERS_BUILDS_DESCRIPTION_PATH must contain builds")
-            })?;
-        let source = std::fs::read(&source_build.path).map_err(|_| {
-            proc_exit::sysexits::IO_ERR.with_message(format!(
-                "Failed to read source build {}",
-                source_build.path.display(),
-            ))
-        })?;
-        let source_features = source_build.features;
+        let source_build = self.remove_source();
+
+        if source_build.is_none() {
+            println!("cargo:warning=The JSON file loaded from the environment variable MULTIVERS_BUILDS_DESCRIPTION_PATH must contain builds.");
+            println!("cargo:warning=It will build, but it will fail at runtime.");
+        }
+
+        let source = source_build
+            .as_ref()
+            .map(|source| {
+                std::fs::read(&source.path).map_err(|_| {
+                    proc_exit::sysexits::IO_ERR.with_message(format!(
+                        "Failed to read source build {}",
+                        source.path.display(),
+                    ))
+                })
+            })
+            .transpose()?
+            .unwrap_or_default();
+        let source_features = source_build.map(|s| s.features).unwrap_or_default();
         let patches = self
             .builds
             .into_iter()
@@ -135,27 +144,6 @@ impl BuildsDescription {
             const PATCHES: [Build; #n_builds] = [
                 #(#patches),*
             ];
-        };
-
-        std::fs::write(dest_path, tokens.to_string()).map_err(|_| {
-            proc_exit::sysexits::IO_ERR.with_message(format!(
-                "Failed to write generated Rust file to {}",
-                dest_path.display(),
-            ))
-        })?;
-
-        Ok(())
-    }
-
-    #[cfg(feature = "cargo-clippy")]
-    pub fn generate_sources(self, dest_path: &Path) -> Result<(), Exit> {
-        let tokens = quote! {
-            const SOURCE: Build = Build {
-                compressed_build: &[],
-                features: &[],
-                source: true,
-            };
-            const PATCHES: [Build; 0] = [];
         };
 
         std::fs::write(dest_path, tokens.to_string()).map_err(|_| {

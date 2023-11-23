@@ -48,7 +48,8 @@
 //!
 //! [cargo-multivers]: https://crates.io/crates/cargo-multivers
 #![feature(stdarch_internal)]
-#![no_main]
+#![cfg_attr(not(test), no_main)]
+#![cfg_attr(test, allow(dead_code))]
 #![warn(missing_docs)]
 
 mod build;
@@ -62,7 +63,7 @@ use build::{Build, Executable};
 ///
 /// # Example
 ///
-/// ```
+/// ```no_run
 /// #![no_main]
 ///
 /// pub use multivers_runner::main;
@@ -74,6 +75,7 @@ use build::{Build, Executable};
 /// - `argv` and `envp` must be null-terminated arrays of valid pointers to null-terminated strings.
 /// - Each element of `argv` and `envp` must be valid for reads of bytes up to and including the null terminator.
 #[no_mangle]
+#[cfg(not(test))]
 pub unsafe extern "C" fn main(argc: i32, argv: *const *const i8, envp: *const *const i8) {
     let result = run(argc, argv, envp);
 
