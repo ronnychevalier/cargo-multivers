@@ -7,6 +7,7 @@ use escargot::CargoBuild;
 
 use predicates::prelude::*;
 
+#[cfg(test)]
 fn build_crate(name: &str) -> Command {
     let multivers_manifest = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
     let test_manifest = Path::new(env!("CARGO_MANIFEST_DIR"))

@@ -22,20 +22,6 @@ rust-version = "1.74"
 repository = "https://github.com/ronnychevalier/cargo-multivers"
 include = ["README.md", "CHANGELOG.md", "/src/*", "/LICENSE*"]
 
-[workspace]
-members = ["multivers-runner"]
-exclude = [
-    "tests/test-argv",
-    "tests/test-nothing",
-    "tests/test-useless-computation",
-]
-
-[workspace.lints.rust]
-missing_docs = "warn"
-
-[lints]
-workspace = true
-
 [dependencies]
 anyhow = "1"
 escargot = "0.5"
@@ -60,3 +46,24 @@ predicates = "3"
 [profile.release]
 lto = true
 strip = "symbols"
+
+[workspace]
+members = ["multivers-runner"]
+exclude = [
+    "tests/test-argv",
+    "tests/test-nothing",
+    "tests/test-useless-computation",
+]
+
+[workspace.lints.rust]
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+indexing_slicing = "warn"
+panic_in_result_fn = "warn"
+dbg_macro = "warn"
+
+[lints]
+workspace = true
