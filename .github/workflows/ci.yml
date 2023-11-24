@@ -46,7 +46,7 @@ jobs:
         override: true
     - uses: Swatinem/rust-cache@v2
     - name: Default features
-      run: cargo check --workspace --all-targets
+      run: cargo check --all-targets
   rustfmt:
     name: rustfmt
     runs-on: ubuntu-latest
@@ -82,7 +82,27 @@ jobs:
     - uses: actions-rs/clippy-check@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        args: --workspace --all-features --all-targets -- -D warnings
+        args: --all-features --all-targets -- -D warnings
+  clippy-runner:
+    name: clippy
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        profile: minimal
+        override: true
+        components: clippy
+    - uses: Swatinem/rust-cache@v2
+    - uses: actions-rs/clippy-check@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        args: -p multivers-runner --all-features --all-targets -- -D warnings
   cargo-deny:
     name: "cargo deny"
     runs-on: ubuntu-latest

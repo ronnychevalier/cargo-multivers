@@ -14,7 +14,6 @@ keywords = [
     "multivers",
 ]
 repository = "https://github.com/ronnychevalier/cargo-multivers"
-rust-version = "1.74"
 
 [dependencies]
 cfg-if = "1"
