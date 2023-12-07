@@ -3,6 +3,7 @@ name = "multivers-runner"
 version = "0.1.0"
 description = "Library to create a portable binary that embeds multiple versions of an executable each using a different CPU feature set"
 edition = "2021"
+readme = "README.md"
 license = "MIT OR Apache-2.0"
 categories = ["hardware-support"]
 keywords = [
