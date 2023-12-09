@@ -2,6 +2,10 @@
 #![no_main]
 #![cfg_attr(windows, windows_subsystem = "console")]
 
+#[used]
+#[no_mangle]
+pub static _fltused: i32 = 0;
+
 #[cfg(windows)]
 #[no_mangle]
 pub unsafe extern "C" fn mainCRTStartup() -> ! {
