@@ -57,6 +57,7 @@ exclude = [
 
 [workspace.lints.rust]
 missing_docs = "warn"
+trivial_numeric_casts = "warn"
 
 [workspace.lints.clippy]
 unwrap_used = "warn"
@@ -64,6 +65,14 @@ expect_used = "warn"
 indexing_slicing = "warn"
 panic_in_result_fn = "warn"
 dbg_macro = "warn"
+panic = "warn"
+todo = "warn"
+unnecessary_safety_comment = "warn"
+unnecessary_safety_doc = "warn"
+unimplemented = "warn"
+use_debug = "warn"
+cargo = "warn"
+cast_lossless = "warn"
 
 [lints]
 workspace = true
