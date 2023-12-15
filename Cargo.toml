@@ -10,14 +10,7 @@ categories = [
     "command-line-utilities",
     "development-tools::cargo-plugins",
 ]
-keywords = [
-    "performance",
-    "optimization",
-    "cargo",
-    "cpu",
-    "features",
-    "multivers",
-]
+keywords = ["performance", "optimization", "cargo", "cpu", "multivers"]
 rust-version = "1.74"
 repository = "https://github.com/ronnychevalier/cargo-multivers"
 include = ["README.md", "CHANGELOG.md", "/src/*", "/LICENSE*"]
