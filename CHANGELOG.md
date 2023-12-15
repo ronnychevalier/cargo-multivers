@@ -7,15 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.6.0...HEAD
+
+## [0.6.0] - 15-12-2023
+
+### Added
+
+- You can now specify the version of the [runner][multivers-runner] with `--runner-version` (defaults to the latest published version of the runner).
+
 ### Changed
 
 - The runner no longer depends on a Git repository.
   `std_detect` has been forked and an up-to-date version called `notstd_detect` has been uploaded to `crates.io` to access the required features.
-- The runner has been uploaded to `crates.io` as a separate crate [`multivers-runner`](https://crates.io/crates/multivers-runner).
+- The runner has been uploaded to `crates.io` as a separate crate [`multivers-runner`][multivers-runner].
 - Update dependencies.
 - MSRV is now 1.74.
 
-[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.5.0...HEAD
+[0.6.0]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.5.0...v0.6.0
 
 ## [0.5.0] - 12-08-2023
 
@@ -122,3 +130,5 @@ cpus = ["generic", "alderlake", "skylake", "sandybridge", "ivybridge"]
 This was the initial release of `cargo-multivers`.
 
 [0.1.0]: https://github.com/ronnychevalier/cargo-multivers/releases/tag/v0.1.0
+
+[multivers-runner]: https://crates.io/crates/multivers-runner
