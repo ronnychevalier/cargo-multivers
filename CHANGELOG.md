@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - The runner no longer depends on a Git repository.
   `std_detect` has been forked and an up-to-date version called `notstd_detect` has been uploaded to `crates.io` to access the required features.
+- The runner has been uploaded to `crates.io` as a separate crate [`multivers-runner`](https://crates.io/crates/multivers-runner).
 - Update dependencies.
+- MSRV is now 1.74.
 
 [Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.5.0...HEAD
 
