@@ -59,6 +59,19 @@ cargo install --locked cargo-multivers
 cargo +nightly multivers
 ```
 
+## Recommendations
+
+`cargo multivers` uses the `release` [profile](https://doc.rust-lang.org/cargo/reference/profiles.html) of your package to build the binary (`[profile.release]`).
+To optimize the size of your binary and to reduce the startup time, it is recommended [to enable features that can reduce the size][min-sized-rust] of each build.
+For example, you can have the following profile that reduce the size of your binary, while still prioritizing speed optimizations and not increasing significantly the build time:
+
+```toml
+[profile.release]
+strip = "symbols"
+panic = "abort"
+lto = "thin"
+```
+
 ## Related Work
 
 - If you want to apply this approach only at the function level, take a look at the [multiversion](https://crates.io/crates/multiversion) crate.
@@ -84,3 +97,4 @@ additional terms or conditions.
 [ci-image]: https://img.shields.io/github/actions/workflow/status/ronnychevalier/cargo-multivers/ci.yml
 [rustc-image]: https://img.shields.io/badge/rustc-1.74+-blue.svg
 [license-image]: https://img.shields.io/crates/l/cargo-multivers.svg
+[min-sized-rust]: https://github.com/johnthagen/min-sized-rust
