@@ -81,8 +81,9 @@ impl Multivers {
             .join(clap::crate_name!())
             .into_std_path_buf();
 
-        let runner = RunnerBuilder::generate_crate_sources(output_directory.clone())
-            .context("Failed to generate the source files of the runner")?;
+        let runner =
+            RunnerBuilder::generate_crate_sources(output_directory.clone(), &args.runner_version)
+                .context("Failed to generate the source files of the runner")?;
 
         let progress = indicatif::ProgressBar::new(0).with_style(
             ProgressStyle::with_template(

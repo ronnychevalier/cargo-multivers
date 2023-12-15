@@ -42,6 +42,10 @@ pub struct Args {
     )]
     pub exclude_cpu_features: Option<Vec<String>>,
 
+    /// Specify the version of the runner to use
+    #[clap(long, value_name = "VERSION", default_value = "0.1")]
+    pub runner_version: String,
+
     #[command(flatten)]
     pub manifest: clap_cargo::Manifest,
 
