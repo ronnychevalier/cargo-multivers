@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- The messages like `warning: unstable feature specified for -Ctarget-feature` are now hidden to limit the noise.
+
 ### Fixed
 
 - `RUSTFLAGS` is no longer overwritten completely (discarding it previous value). There was a typo when reading its current value (`RUST_FLAGS` instead of `RUSTFLAGS`).
