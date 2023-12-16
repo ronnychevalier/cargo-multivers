@@ -7,6 +7,8 @@ use anyhow::Context;
 
 use cargo_metadata::{Metadata, Package};
 
+use clap::ColorChoice;
+
 use escargot::CargoBuild;
 
 use serde::Serialize;
@@ -92,6 +94,12 @@ impl Multivers {
             .progress_chars("=> "),
         );
         progress.enable_steady_tick(Duration::from_millis(200));
+
+        if args.color == ColorChoice::Never {
+            console::set_colors_enabled(false);
+        } else if args.color == ColorChoice::Always {
+            console::set_colors_enabled(true);
+        }
 
         Ok(Self {
             metadata,

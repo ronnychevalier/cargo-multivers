@@ -1,3 +1,5 @@
+use clap::ColorChoice;
+
 use crate::rustc::Rustc;
 
 #[derive(clap::Parser)]
@@ -45,6 +47,10 @@ pub struct Args {
     /// Specify the version of the runner to use
     #[clap(long, value_name = "VERSION", default_value = "0.1")]
     pub runner_version: String,
+
+    /// Color preferences for program output
+    #[clap(long, value_name = "WHEN", default_value = "auto")]
+    pub color: ColorChoice,
 
     #[command(flatten)]
     pub manifest: clap_cargo::Manifest,

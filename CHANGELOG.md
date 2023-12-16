@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `--color` option to control the color preferences of the output (possible values: auto, always, never. default: auto).
+
 ### Changed
 
 - The messages like `warning: unstable feature specified for -Ctarget-feature` are now hidden to limit the noise.
