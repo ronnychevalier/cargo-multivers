@@ -57,6 +57,7 @@ pub struct Multivers {
     features: clap_cargo::Features,
     cpus: Cpus,
     progress: ProgressBar,
+    profile: String,
     cargo_args: Vec<String>,
 }
 
@@ -111,6 +112,7 @@ impl Multivers {
             cpus,
             progress,
             cargo_args: args.args,
+            profile: args.profile,
         })
     }
 
@@ -155,6 +157,12 @@ impl Multivers {
             rust_flags.push_str(" -C link-args=/Brepro");
         };
 
+        let profile_dir = if self.profile == "dev" {
+            "debug"
+        } else {
+            &self.profile
+        };
+
         let mut final_style_set = false;
         let mut hasher = Sha3_256::new();
         let mut builds = cpu_features
@@ -181,7 +189,7 @@ impl Multivers {
 
                 let rust_flags = format!("{rust_flags} -Ctarget-feature={target_features_flags}");
                 let cargo = CargoBuild::new()
-                    .release()
+                    .arg(format!("--profile={}", self.profile))
                     .target(&self.target)
                     .target_dir(&self.output_directory)
                     .manifest_path(&manifest_path)
@@ -210,7 +218,7 @@ impl Multivers {
                 let mut output_path = self
                     .output_directory
                     .join(&self.target)
-                    .join("release")
+                    .join(profile_dir)
                     .join(filename);
                 output_path.set_extension(std::env::consts::EXE_EXTENSION);
 
@@ -257,6 +265,12 @@ impl Multivers {
     pub fn build(&self) -> anyhow::Result<()> {
         let (selected_packages, _) = self.workspace.partition_packages(&self.metadata);
 
+        let profile_dir = if self.profile == "dev" {
+            "debug"
+        } else {
+            &self.profile
+        };
+
         for selected_package in selected_packages {
             println!(
                 "{:>12} {} v{} ({})",
@@ -280,7 +294,7 @@ impl Multivers {
                 let output_path = self
                     .output_directory
                     .join(&self.target)
-                    .join("release")
+                    .join(profile_dir)
                     .join(original_filename);
 
                 std::fs::rename(&build.path, &output_path).with_context(|| {

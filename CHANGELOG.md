@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - `--color` option to control the color preferences of the output (possible values: auto, always, never. default: auto).
+- `--profile` option to select a profile to build artifacts with (default: release).
 
 ### Changed
 

@@ -48,6 +48,10 @@ pub struct Args {
     #[clap(long, value_name = "VERSION", default_value = "0.1")]
     pub runner_version: String,
 
+    /// Build artifacts with the specified profile
+    #[clap(long, value_name = "PROFILE-NAME", default_value = "release")]
+    pub profile: String,
+
     /// Color preferences for program output
     #[clap(long, value_name = "WHEN", default_value = "auto")]
     pub color: ColorChoice,
