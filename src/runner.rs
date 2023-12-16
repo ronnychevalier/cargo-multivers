@@ -72,7 +72,6 @@ impl RunnerBuilder {
     /// Builds a runner that includes the given builds
     pub fn build(
         &self,
-        cargo_args: impl IntoIterator<Item = impl AsRef<OsStr>>,
         target: &str,
         builds_path: &Path,
         original_filename: &OsStr,
@@ -82,7 +81,6 @@ impl RunnerBuilder {
             .target(target)
             .target_dir(&self.output_directory)
             .manifest_path(&self.manifest_path)
-            .args(cargo_args)
             .env("MULTIVERS_BUILDS_DESCRIPTION_PATH", builds_path);
 
         let cargo = cargo

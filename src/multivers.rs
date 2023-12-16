@@ -305,12 +305,9 @@ impl Multivers {
                     builds.builds.len(),
                 );
 
-                let bin_path = self.runner.build(
-                    &self.cargo_args,
-                    &self.target,
-                    &builds_path,
-                    &original_filename,
-                )?;
+                let bin_path = self
+                    .runner
+                    .build(&self.target, &builds_path, &original_filename)?;
 
                 println!(
                     "{:>12} ({})",
