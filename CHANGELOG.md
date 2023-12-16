@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `RUSTFLAGS` is no longer overwritten completely (discarding it previous value). There was a typo when reading its current value (`RUST_FLAGS` instead of `RUSTFLAGS`).
+
 [Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.6.0...HEAD
 
 ## [0.6.0] - 15-12-2023

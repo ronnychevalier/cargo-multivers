@@ -134,7 +134,7 @@ impl Multivers {
             Triple::from_str(&self.target).context("Failed to parse the target")?;
         let manifest_path = package.manifest_path.as_std_path().to_path_buf();
         let features_list = self.features.features.join(" ");
-        let mut rust_flags = std::env::var("RUST_FLAGS").unwrap_or_default();
+        let mut rust_flags = std::env::var("RUSTFLAGS").unwrap_or_default();
 
         let metadata = MultiversMetadata::from_package(package)
             .context("Failed to parse package's metadata")?;
