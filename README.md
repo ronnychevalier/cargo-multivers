@@ -13,7 +13,7 @@ Cargo subcommand to build multiple versions of the same binary, each with a diff
 Each version is built with a set of CPU features (e.g., `+cmpxchg16b,+fxsr,+sse,+sse2,+sse3`) from a CPU (e.g., `ivybridge`) supported by the target (e.g., `x86_64-pc-windows-msvc`).
 
 By default, it lists the CPUs known to `rustc` for a given target, then it fetches each set of CPU features and filters out
-the duplicates.
+the duplicates (i.e., the compilations that gave the same binaries despite having different CPU features).
 You can also add a section to your `Cargo.toml` to set the allowed list of CPUs for your package.
 For example, for `x86_64` you could add:
 
