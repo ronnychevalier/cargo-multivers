@@ -11,7 +11,7 @@ pub trait CommandMessagesExt {
 impl CommandMessagesExt for CommandMessages {
     fn find_executable(self) -> Result<Option<PathBuf>, CargoError> {
         self.into_iter()
-            .find_map(|message| {
+            .filter_map(|message| {
                 let message = match message {
                     Ok(message) => message,
                     Err(e) => return Some(Err(e)),
@@ -50,6 +50,7 @@ impl CommandMessagesExt for CommandMessages {
                     Err(e) => Some(Err(e)),
                 }
             })
+            .last()
             .transpose()
     }
 }

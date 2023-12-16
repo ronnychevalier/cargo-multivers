@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - `RUSTFLAGS` is no longer overwritten completely (discarding it previous value). There was a typo when reading its current value (`RUST_FLAGS` instead of `RUSTFLAGS`).
 - Do not pass the cargo args from the CLI to the build of the runner. These arguments are meant to specify additional args for the builds, not the runner itself.
+- Improve how the executable being built is found when parsing cargo messages.
 
 [Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.6.0...HEAD
 
