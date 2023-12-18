@@ -1,6 +1,6 @@
 [package]
 name = "cargo-multivers"
-version = "0.6.0"
+version = "0.7.0"
 description = "Cargo subcommand to build multiple versions of the same binary, each with a different CPU features set, merged into a single portable optimized binary"
 edition = "2021"
 readme = "README.md"

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.7.0...HEAD
+
+## [0.7.0]
+
 ### Added
 
 - `--color` option to control the color preferences of the output (possible values: auto, always, never. default: auto).
@@ -23,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Improve how the executable being built is found when parsing cargo messages.
 - Fix building a binary in a workspace.
 
-[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.6.0...HEAD
+[0.7.0]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.6.0...v0.7.0
 
 ## [0.6.0] - 15-12-2023
 
