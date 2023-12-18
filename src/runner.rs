@@ -52,6 +52,8 @@ impl RunnerBuilder {
         opt-level = "z"
         codegen-units = 1
         panic = "abort"
+
+        [workspace]
         "#
         );
         let main = b"
