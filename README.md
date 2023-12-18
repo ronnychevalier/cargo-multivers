@@ -19,7 +19,7 @@ For example, for `x86_64` you could add:
 
 ```toml
 [package.metadata.multivers.x86_64]
-cpus = ["generic", "alderlake", "skylake", "sandybridge", "ivybridge"]
+cpus = ["x86-64", "x86-64-v2", "x86-64-v3", "x86-64-v4", "raptorlake"]
 ```
 
 After building the different versions, it computes a hash of each version and it filters out the duplicates.
@@ -75,6 +75,14 @@ For example, you can have the following profile that reduce the size of your bin
 strip = "symbols"
 panic = "abort"
 lto = "thin"
+```
+
+To reduce the total build time, it might be best to limit the set of CPUs for which the project will be built.
+For instance, you can add to your `Cargo.toml` the following section if you build for `x86_64`:
+
+```toml
+[package.metadata.multivers.x86_64]
+cpus = ["x86-64", "x86-64-v2", "x86-64-v3", "x86-64-v4"]
 ```
 
 ## Related Work
