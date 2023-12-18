@@ -38,6 +38,11 @@ it is mostly intended for the following use cases:
 - To build a project that is distributed to multiple users with different microarchitectures (e.g., a release version of your project).
 - To build a program that performs long running tasks (e.g., heavy computations, a server, or a game).
 
+> [!TIP]
+> If you only want to optimize your program for your CPU, **do not use `cargo multivers`**,
+> you can just use [`-C target-cpu=native`][target-cpu] like this: `RUSTFLAGS=-Ctarget-cpu=native cargo build --release`.
+> You will save some CPU cycles :)
+
 ## Supported Operating Systems
 
 This project is tested on Windows and Linux (due to the use of `memfd_create`, only Linux >= v3.17 is supported).
@@ -98,3 +103,4 @@ additional terms or conditions.
 [rustc-image]: https://img.shields.io/badge/rustc-1.74+-blue.svg
 [license-image]: https://img.shields.io/crates/l/cargo-multivers.svg
 [min-sized-rust]: https://github.com/johnthagen/min-sized-rust
+[target-cpu]: https://doc.rust-lang.org/rustc/codegen-options/index.html#target-cpu
