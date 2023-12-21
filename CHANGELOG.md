@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Do not propagate the `CARGO_UNSTABLE_BUILD_STD` environment variable to the build of the runner (#7).
+
 [Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.7.0...HEAD
 
 ## [0.7.0] - 18-12-2023

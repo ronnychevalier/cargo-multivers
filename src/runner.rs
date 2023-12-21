@@ -78,11 +78,16 @@ impl RunnerBuilder {
         builds_path: &Path,
         original_filename: &OsStr,
     ) -> anyhow::Result<PathBuf> {
+        // We do not propagate `CARGO_UNSTABLE_BUILD_STD` since if `panic_abort` is not
+        // specified, the build of the runner will fail (since its profile specifies `panic=abort`).
+        // A proper fix could be to clear the whole environment before spawning this `cargo build`,
+        // but until `CargoBuild` exposes the `Command` or this function, we can only do this.
         let cargo = CargoBuild::new()
             .release()
             .target(target)
             .target_dir(&self.output_directory)
             .manifest_path(&self.manifest_path)
+            .env_remove("CARGO_UNSTABLE_BUILD_STD")
             .env("MULTIVERS_BUILDS_DESCRIPTION_PATH", builds_path);
 
         let cargo = cargo
