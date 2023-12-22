@@ -1,0 +1,16 @@
+[workspace]
+
+[package]
+name = "test-workspace"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+
+[profile.release]
+strip = "symbols"
+panic = "abort"
+
+[package.metadata.multivers.x86_64]
+cpus = ["x86-64", "x86-64-v2", "x86-64-v3"]

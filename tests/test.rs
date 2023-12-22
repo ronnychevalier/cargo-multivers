@@ -36,7 +36,9 @@ fn build_crate(name: &str) -> Command {
     Command::new(multivers_runner)
 }
 
-/// Checks that we can build a crate that does nothing and that it can run successfully
+/// Checks that we can build a crate that does nothing and that it can run successfully.
+///
+/// It should build without a runner since every build leads to the same binary.
 #[test]
 fn crate_that_does_nothing() {
     build_crate("test-nothing").assert().success().stdout("");
@@ -47,6 +49,22 @@ fn crate_that_does_nothing() {
 fn crate_that_prints_argv() {
     let expected_args = ["z", "foo2", "''"];
     build_crate("test-argv")
+        .args(expected_args)
+        .assert()
+        .success()
+        .stdout(predicate::str::ends_with(format!(
+            "{}\n",
+            expected_args.join(" ")
+        )));
+}
+
+/// Checks that we can build a crate that is part of a workspace.
+///
+/// Regression test (see #5).
+#[test]
+fn crate_within_workspace() {
+    let expected_args = ["workspace", "abc", "0987"];
+    build_crate("test-workspace")
         .args(expected_args)
         .assert()
         .success()
