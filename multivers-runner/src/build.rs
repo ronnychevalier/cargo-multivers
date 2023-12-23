@@ -18,7 +18,7 @@ pub struct Build<'a> {
     source: bool,
 }
 
-impl<'a> Build<'a> {
+impl Build<'_> {
     /// Extracts the build into a writer
     pub fn extract_into(&self, mut output: impl Write) -> std::io::Result<()> {
         let mut decoder = BzDecoder::new(SOURCE.compressed_build);

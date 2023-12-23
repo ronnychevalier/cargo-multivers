@@ -132,7 +132,7 @@ impl BuildsDescription {
         let source = compress(&source[..])?;
         let n_builds = patches.len();
         let tokens = quote! {
-            const SOURCE: Build = Build {
+            const SOURCE: Build<'_> = Build {
                 compressed_build: &[
                     #(#source),*
                 ],
@@ -141,7 +141,7 @@ impl BuildsDescription {
                 ],
                 source: true,
             };
-            const PATCHES: [Build; #n_builds] = [
+            const PATCHES: [Build<'_>; #n_builds] = [
                 #(#patches),*
             ];
         };

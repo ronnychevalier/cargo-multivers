@@ -10,7 +10,7 @@ use rustix::fs::{memfd_create, MemfdFlags};
 
 use super::{Build, Executable};
 
-impl<'a> Executable for Build<'a> {
+impl Executable for Build<'_> {
     unsafe fn exec(
         self,
         argc: i32,

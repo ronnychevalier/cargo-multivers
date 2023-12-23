@@ -4,7 +4,7 @@ use std::process::Command;
 
 use super::{Build, Executable};
 
-impl<'a> Executable for Build<'a> {
+impl Executable for Build<'_> {
     unsafe fn exec(
         self,
         _argc: i32,
