@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use clap::ColorChoice;
 
 use crate::rustc::Rustc;
@@ -72,9 +74,10 @@ pub struct Args {
 
 impl Args {
     /// Returns the target given on the command line or the default target that rustc uses to build if none is provided
-    pub fn target(&self) -> anyhow::Result<String> {
-        self.target
-            .as_ref()
-            .map_or_else(Rustc::default_target, |target| Ok(target.clone()))
+    pub fn target(&self) -> anyhow::Result<Cow<'_, str>> {
+        self.target.as_deref().map_or_else(
+            || Rustc::default_target().map(Cow::Owned),
+            |target| Ok(target.into()),
+        )
     }
 }

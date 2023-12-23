@@ -22,9 +22,9 @@ fn main() -> anyhow::Result<()> {
     let Cargo::Multivers(args) = Cargo::parse();
 
     if matches!(args.print, Some(Print::CpuFeatures)) {
-        let target = args.target()?;
+        let target = args.target()?.into_owned();
 
-        let cpus = Cpus::builder(&target, args.cpus)
+        let cpus = Cpus::builder(target, args.cpus)
             .context("Failed to get the set of CPU features for the target")?
             .build();
         let mut stdout = std::io::stdout().lock();

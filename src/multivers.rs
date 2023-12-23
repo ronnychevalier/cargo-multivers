@@ -72,9 +72,9 @@ impl Multivers {
         // We must set a target, otherwise RUSTFLAGS will be used by the build scripts as well
         // (which we don't want since we might build with features not supported by the CPU building the package).
         // See https://github.com/rust-lang/cargo/issues/4423
-        let target = args.target()?;
+        let target = args.target()?.into_owned();
 
-        let cpus = Cpus::builder(&target, args.cpus)
+        let cpus = Cpus::builder(target.clone(), args.cpus)
             .context("Failed to get the set of CPU features for the target")?
             .exclude_features(args.exclude_cpu_features.as_deref())
             .build();
