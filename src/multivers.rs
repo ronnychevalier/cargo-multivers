@@ -142,7 +142,7 @@ impl Multivers {
     fn build_package(&self, package: &Package) -> anyhow::Result<BuildsDescription> {
         let triple: Triple =
             Triple::from_str(&self.target).context("Failed to parse the target")?;
-        let manifest_path = package.manifest_path.as_std_path().to_path_buf();
+        let manifest_path = package.manifest_path.as_std_path();
         let features_list = self.features.features.join(" ");
         let mut rust_flags = std::env::var("RUSTFLAGS").unwrap_or_default();
 
@@ -192,7 +192,7 @@ impl Multivers {
                     .arg(format!("--profile={}", self.profile))
                     .target(&self.target)
                     .target_dir(&self.output_directory)
-                    .manifest_path(&manifest_path)
+                    .manifest_path(manifest_path)
                     .args(&self.cargo_args)
                     .env("RUSTFLAGS", rust_flags);
 
