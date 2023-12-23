@@ -59,6 +59,9 @@ impl Rustc {
             ])
             .output()?;
 
+        anyhow::ensure!(cfg.status.success(), "Invalid CPU `{cpu}`");
+        anyhow::ensure!(cfg.stderr.is_empty(), "Invalid CPU `{cpu}`");
+
         let features = cfg
             .stdout
             .lines()
@@ -91,6 +94,12 @@ impl Rustc {
             .skip(1)
             .filter_map(Result::ok)
             .filter_map(|line| {
+                let line = if let Some((line, _)) = line.split_once("- This is the default target")
+                {
+                    line
+                } else {
+                    &line
+                };
                 let line = line.trim();
                 if line.starts_with("native") || line.is_empty() {
                     return None;
@@ -143,5 +152,11 @@ mod tests {
         let cpus = Rustc::cpus_from_target(&target).unwrap();
         let features = Rustc::features_from_cpu(&target, cpus.first().unwrap()).unwrap();
         assert!(!features.is_empty());
+    }
+
+    #[test]
+    fn test_features_from_cpu_invalid() {
+        let target = Rustc::default_target().unwrap();
+        Rustc::features_from_cpu(&target, "invalid invalid").unwrap_err();
     }
 }

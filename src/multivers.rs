@@ -77,7 +77,7 @@ impl Multivers {
         let cpus = Cpus::builder(target.clone(), args.cpus)
             .context("Failed to get the set of CPU features for the target")?
             .exclude_features(args.exclude_cpu_features.as_deref())
-            .build();
+            .build()?;
 
         let output_directory = metadata
             .target_directory

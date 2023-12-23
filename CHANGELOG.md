@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Do not propagate the `CARGO_UNSTABLE_BUILD_STD` environment variable to the build of the runner (#7).
+- Return an error on invalid CPUs from `--cpus`.
 
 [Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.7.0...HEAD
 

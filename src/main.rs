@@ -26,7 +26,7 @@ fn main() -> anyhow::Result<()> {
 
         let cpus = Cpus::builder(target, args.cpus)
             .context("Failed to get the set of CPU features for the target")?
-            .build();
+            .build()?;
         let mut stdout = std::io::stdout().lock();
         for feature in cpus.features() {
             let _ = writeln!(stdout, "{feature}");

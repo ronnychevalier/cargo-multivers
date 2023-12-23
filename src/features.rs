@@ -102,14 +102,19 @@ impl<'a> CpusBuilder<'a> {
         self
     }
 
-    pub fn build(self) -> Cpus {
-        let features = self
+    pub fn build(self) -> anyhow::Result<Cpus> {
+        let features: BTreeMap<_, _> = self
             .iter
             .filter(|cpu| Self::is_cpu_for_target_valid(&self.triple, cpu))
-            .filter_map(|cpu| {
-                let features = Rustc::features_from_cpu(&self.target, &cpu).ok()?;
-                Some((cpu, features))
+            .map(|cpu| -> anyhow::Result<(String, BTreeSet<String>)> {
+                let features = Rustc::features_from_cpu(&self.target, &cpu)?;
+
+                Ok((cpu, features))
             })
+            .collect::<Result<_, _>>()?;
+
+        let features = features
+            .into_iter()
             .filter_map(|(cpu, mut features)| {
                 for exclude in self.excluded_features.into_iter().flatten() {
                     features.remove(exclude);
@@ -122,7 +127,7 @@ impl<'a> CpusBuilder<'a> {
             })
             .collect();
 
-        Cpus { features }
+        Ok(Cpus { features })
     }
 
     fn is_cpu_for_target_valid(triple: &Triple, cpu: &str) -> bool {
