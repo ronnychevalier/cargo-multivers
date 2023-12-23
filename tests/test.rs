@@ -8,23 +8,30 @@ use escargot::CargoBuild;
 use predicates::prelude::*;
 
 #[cfg(test)]
-fn build_crate(name: &str) -> Command {
+fn build_crate(
+    name: &str,
+    modify_command_callback: impl FnOnce(&mut std::process::Command),
+) -> Command {
     let multivers_manifest = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
     let test_manifest = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
         .join(name)
         .join("Cargo.toml");
 
-    let assert = CargoBuild::new()
+    let mut command = CargoBuild::new()
         .manifest_path(multivers_manifest)
         .run()
         .unwrap()
-        .command()
+        .command();
+
+    command
         .arg("multivers")
         .arg("--manifest-path")
-        .arg(test_manifest)
-        .assert()
-        .success();
+        .arg(test_manifest);
+
+    modify_command_callback(&mut command);
+
+    let assert = command.assert().success();
 
     // Until we output json like cargo we need to parse the output manually
     let output = assert.get_output();
@@ -41,14 +48,17 @@ fn build_crate(name: &str) -> Command {
 /// It should build without a runner since every build leads to the same binary.
 #[test]
 fn crate_that_does_nothing() {
-    build_crate("test-nothing").assert().success().stdout("");
+    build_crate("test-nothing", |_| ())
+        .assert()
+        .success()
+        .stdout("");
 }
 
 /// Checks that we can build a crate that prints its argv and that works as expected
 #[test]
 fn crate_that_prints_argv() {
     let expected_args = ["z", "foo2", "''"];
-    build_crate("test-argv")
+    build_crate("test-argv", |_| ())
         .args(expected_args)
         .assert()
         .success()
@@ -64,7 +74,7 @@ fn crate_that_prints_argv() {
 #[test]
 fn crate_within_workspace() {
     let expected_args = ["workspace", "abc", "0987"];
-    build_crate("test-workspace")
+    build_crate("test-workspace", |_| ())
         .args(expected_args)
         .assert()
         .success()
@@ -72,4 +82,22 @@ fn crate_within_workspace() {
             "{}\n",
             expected_args.join(" ")
         )));
+}
+
+/// Checks that we can build a crate with `CARGO_UNSTABLE_BUILD_STD=std`.
+///
+/// Regression test (see #7).
+#[test]
+fn rebuild_std_env() {
+    let expected_args = ["z", "foo2", "''"];
+    build_crate("test-argv", |command| {
+        command.env("CARGO_UNSTABLE_BUILD_STD", "std");
+    })
+    .args(expected_args)
+    .assert()
+    .success()
+    .stdout(predicate::str::ends_with(format!(
+        "{}\n",
+        expected_args.join(" ")
+    )));
 }
