@@ -41,6 +41,7 @@ lto = true
 strip = "symbols"
 
 [workspace]
+resolver = "2"
 members = ["multivers-runner"]
 exclude = [
     "tests/test-argv",
@@ -52,6 +53,11 @@ exclude = [
 [workspace.lints.rust]
 missing_docs = "warn"
 trivial_numeric_casts = "warn"
+improper_ctypes = "warn"
+improper_ctypes_definitions = "warn"
+non_ascii_idents = "warn"
+rust_2018_idioms = "warn"
+single_use_lifetimes = "warn"
 
 [workspace.lints.clippy]
 unwrap_used = "warn"
@@ -67,6 +73,8 @@ unimplemented = "warn"
 use_debug = "warn"
 cargo = "warn"
 cast_lossless = "warn"
+trailing_empty_array = "warn"
+as_ptr_cast_mut = "warn"
 
 [lints]
 workspace = true
