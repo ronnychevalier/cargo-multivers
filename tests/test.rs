@@ -47,6 +47,7 @@ fn build_crate(
 ///
 /// It should build without a runner since every build leads to the same binary.
 #[test]
+#[cfg_attr(coverage, ignore)]
 fn crate_that_does_nothing() {
     build_crate("test-nothing", |_| ())
         .assert()
@@ -88,6 +89,7 @@ fn crate_within_workspace() {
 ///
 /// Regression test (see #7).
 #[test]
+#[cfg_attr(coverage, ignore)]
 fn rebuild_std_env() {
     let expected_args = ["z", "foo2", "''"];
     build_crate("test-argv", |command| {
