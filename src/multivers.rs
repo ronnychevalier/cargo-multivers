@@ -120,22 +120,25 @@ impl Multivers {
         &self,
         triple: &Triple,
         metadata: Option<&MultiversMetadata>,
-    ) -> Vec<CpuFeatures> {
-        if let Some(metadata) = metadata {
-            if let Some(cpus) = metadata
+    ) -> anyhow::Result<Vec<CpuFeatures>> {
+        if let Some(cpus) = metadata.and_then(|metadata| {
+            metadata
                 .get(&triple.architecture)
                 .and_then(TargetMetadata::cpus)
-            {
-                cpus.iter()
-                    .filter_map(|cpu| self.cpus.get(cpu))
-                    .unique()
-                    .cloned()
-                    .collect()
-            } else {
-                self.cpus.features_sets().cloned().collect()
-            }
+        }) {
+            anyhow::ensure!(!cpus.is_empty(), "Empty list of CPUs");
+
+            cpus.iter()
+                .unique()
+                .map(|cpu| {
+                    self.cpus
+                        .get(cpu)
+                        .cloned()
+                        .ok_or_else(|| anyhow::anyhow!("Unknown CPU `{cpu}`"))
+                })
+                .collect::<anyhow::Result<_>>()
         } else {
-            self.cpus.features_sets().cloned().collect()
+            Ok(self.cpus.features_sets().cloned().collect())
         }
     }
 
@@ -148,7 +151,11 @@ impl Multivers {
 
         let metadata = MultiversMetadata::from_package(package)
             .context("Failed to parse package's metadata")?;
-        let cpu_features = self.cpu_features(&triple, metadata.as_ref());
+        let cpu_features = self.cpu_features(&triple, metadata.as_ref())?;
+
+        if cpu_features.is_empty() {
+            anyhow::bail!("Empty set of CPU features");
+        }
 
         self.progress.set_length(cpu_features.len() as u64);
         self.progress.set_prefix("Building");
