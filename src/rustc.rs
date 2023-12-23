@@ -83,6 +83,8 @@ impl Rustc {
             .args(["--print=target-cpus", "--target", target])
             .output()?;
 
+        anyhow::ensure!(cpus.status.success(), "Invalid target `{target}`");
+
         let cpus = cpus
             .stdout
             .lines()
@@ -128,6 +130,11 @@ mod tests {
         let target = Rustc::default_target().unwrap();
         let cpus = Rustc::cpus_from_target(&target).unwrap();
         assert!(!cpus.is_empty());
+    }
+
+    #[test]
+    fn test_cpus_from_target_invalid() {
+        Rustc::cpus_from_target("invalid target").unwrap_err();
     }
 
     #[test]
