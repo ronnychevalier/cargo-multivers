@@ -36,7 +36,9 @@ fn build_crate(
 
     let _assert = command.assert().success();
 
-    let multivers_runner = out_dir.path().join(name);
+    let multivers_runner = out_dir
+        .path()
+        .join(format!("{name}{}", std::env::consts::EXE_SUFFIX));
 
     assert_eq!(std::fs::read_dir(out_dir.path()).into_iter().count(), 1);
     assert!(multivers_runner.exists());
