@@ -11,7 +11,8 @@ use predicates::prelude::*;
 fn build_crate(
     name: &str,
     modify_command_callback: impl FnOnce(&mut std::process::Command),
-) -> Command {
+) -> (Command, tempfile::TempDir) {
+    let out_dir: tempfile::TempDir = tempfile::tempdir().unwrap();
     let multivers_manifest = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
     let test_manifest = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
@@ -27,20 +28,20 @@ fn build_crate(
     command
         .arg("multivers")
         .arg("--manifest-path")
-        .arg(test_manifest);
+        .arg(test_manifest)
+        .arg("--out-dir")
+        .arg(out_dir.path());
 
     modify_command_callback(&mut command);
 
-    let assert = command.assert().success();
+    let _assert = command.assert().success();
 
-    // Until we output json like cargo we need to parse the output manually
-    let output = assert.get_output();
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let last_line = stdout.lines().last().unwrap();
-    let (_, path) = last_line.split_once('(').unwrap();
-    let multivers_runner = path.strip_suffix(')').map(Path::new).unwrap();
+    let multivers_runner = out_dir.path().join(name);
 
-    Command::new(multivers_runner)
+    assert_eq!(std::fs::read_dir(out_dir.path()).into_iter().count(), 1);
+    assert!(multivers_runner.exists());
+
+    (Command::new(multivers_runner), out_dir)
 }
 
 /// Checks that we can build a crate that does nothing and that it can run successfully.
@@ -50,6 +51,7 @@ fn build_crate(
 #[cfg_attr(coverage, ignore)]
 fn crate_that_does_nothing() {
     build_crate("test-nothing", |_| ())
+        .0
         .assert()
         .success()
         .stdout("");
@@ -60,6 +62,7 @@ fn crate_that_does_nothing() {
 fn crate_that_prints_argv() {
     let expected_args = ["z", "foo2", "''"];
     build_crate("test-argv", |_| ())
+        .0
         .args(expected_args)
         .assert()
         .success()
@@ -77,6 +80,7 @@ fn target_dir_arg() {
     build_crate("test-argv", |command| {
         command.arg("--").arg("--target-dir").arg(target_dir.path());
     })
+    .0
     .args(expected_args)
     .assert()
     .success()
@@ -86,18 +90,6 @@ fn target_dir_arg() {
     )));
 }
 
-/// Checks that `--out-dir` works.
-#[test]
-fn out_dir() {
-    let out_dir = tempfile::tempdir().unwrap();
-    let command = build_crate("test-argv", |command| {
-        command.arg("--out-dir").arg(out_dir.path());
-    });
-    let binary_name = Path::new(command.get_program()).file_name().unwrap();
-    assert_eq!(std::fs::read_dir(out_dir.path()).into_iter().count(), 1);
-    assert!(out_dir.path().join(binary_name).exists());
-}
-
 /// Checks that we can build a crate that is part of a workspace.
 ///
 /// Regression test (see #5).
@@ -105,6 +97,7 @@ fn out_dir() {
 fn crate_within_workspace() {
     let expected_args = ["workspace", "abc", "0987"];
     build_crate("test-workspace", |_| ())
+        .0
         .args(expected_args)
         .assert()
         .success()
@@ -124,6 +117,7 @@ fn rebuild_std_env() {
     build_crate("test-argv", |command| {
         command.env("CARGO_UNSTABLE_BUILD_STD", "std");
     })
+    .0
     .args(expected_args)
     .assert()
     .success()
