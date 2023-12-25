@@ -86,6 +86,18 @@ fn target_dir_arg() {
     )));
 }
 
+/// Checks that `--out-dir` works.
+#[test]
+fn out_dir() {
+    let out_dir = tempfile::tempdir().unwrap();
+    let command = build_crate("test-argv", |command| {
+        command.arg("--out-dir").arg(out_dir.path());
+    });
+    let binary_name = Path::new(command.get_program()).file_name().unwrap();
+    assert_eq!(std::fs::read_dir(out_dir.path()).into_iter().count(), 1);
+    assert!(out_dir.path().join(binary_name).exists());
+}
+
 /// Checks that we can build a crate that is part of a workspace.
 ///
 /// Regression test (see #5).

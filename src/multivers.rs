@@ -53,7 +53,8 @@ pub struct Multivers {
     target: String,
     runner: RunnerBuilder,
     workspace: clap_cargo::Workspace,
-    output_directory: PathBuf,
+    target_dir: PathBuf,
+    out_dir: Option<PathBuf>,
     features: clap_cargo::Features,
     cpus: Cpus,
     progress: ProgressBar,
@@ -79,13 +80,13 @@ impl Multivers {
             .exclude_features(args.exclude_cpu_features.as_deref())
             .build()?;
 
-        let output_directory = metadata
+        let target_dir = metadata
             .target_directory
             .join(clap::crate_name!())
             .into_std_path_buf();
 
         let runner =
-            RunnerBuilder::generate_crate_sources(output_directory.clone(), &args.runner_version)
+            RunnerBuilder::generate_crate_sources(target_dir.clone(), &args.runner_version)
                 .context("Failed to generate the source files of the runner")?;
 
         let progress = indicatif::ProgressBar::new(0).with_style(
@@ -107,7 +108,8 @@ impl Multivers {
             target,
             runner,
             workspace: args.workspace,
-            output_directory,
+            target_dir,
+            out_dir: args.out_dir,
             features: args.features,
             cpus,
             progress,
@@ -222,7 +224,7 @@ impl Multivers {
                 let filename = format!("{:x}", hasher.finalize_reset());
 
                 let output_path_parent = self
-                    .output_directory
+                    .target_dir
                     .join(&self.target)
                     .join(profile_dir);
                 let mut output_path = output_path_parent
@@ -302,10 +304,10 @@ impl Multivers {
 
             if let [build] = builds.builds.as_slice() {
                 let output_path = self
-                    .output_directory
+                    .target_dir
                     .join(&self.target)
                     .join(profile_dir)
-                    .join(original_filename);
+                    .join(&original_filename);
 
                 std::fs::rename(&build.path, &output_path).with_context(|| {
                     format!(
@@ -314,6 +316,20 @@ impl Multivers {
                         output_path.display()
                     )
                 })?;
+
+                if let Some(out_dir) = self.out_dir.as_deref() {
+                    std::fs::create_dir_all(out_dir).with_context(|| {
+                        format!("Failed to create output directory `{}`", out_dir.display())
+                    })?;
+                    let to = out_dir.join(&original_filename);
+                    std::fs::copy(&output_path, &to).with_context(|| {
+                        format!(
+                            "Failed to copy `{}` to `{}`",
+                            output_path.display(),
+                            to.display()
+                        )
+                    })?;
+                }
 
                 println!(
                     "{:>12} 1 version, no runner needed ({})",
@@ -324,7 +340,7 @@ impl Multivers {
                 let encoded =
                     serde_json::to_vec_pretty(&builds).context("Failed to encode the builds")?;
 
-                let package_output_directory = self.output_directory.join(&selected_package.name);
+                let package_output_directory = self.target_dir.join(&selected_package.name);
                 std::fs::create_dir_all(&package_output_directory)
                     .context("Failed to create temporary output directory")?;
                 let builds_path = package_output_directory.join("builds.json");
@@ -340,6 +356,20 @@ impl Multivers {
                 let bin_path = self
                     .runner
                     .build(&self.target, &builds_path, &original_filename)?;
+
+                if let Some(out_dir) = self.out_dir.as_deref() {
+                    std::fs::create_dir_all(out_dir).with_context(|| {
+                        format!("Failed to create output directory `{}`", out_dir.display())
+                    })?;
+                    let to = out_dir.join(&original_filename);
+                    std::fs::copy(&bin_path, &to).with_context(|| {
+                        format!(
+                            "Failed to copy `{}` to `{}`",
+                            bin_path.display(),
+                            to.display()
+                        )
+                    })?;
+                }
 
                 println!(
                     "{:>12} ({})",

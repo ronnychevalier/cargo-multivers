@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::path::PathBuf;
 
 use clap::ColorChoice;
 
@@ -57,6 +58,10 @@ pub struct Args {
     /// Color preferences for program output
     #[clap(long, value_name = "WHEN", default_value = "auto")]
     pub color: ColorChoice,
+
+    /// Copy final artifacts to this directory
+    #[clap(long, value_name = "PATH")]
+    pub out_dir: Option<PathBuf>,
 
     #[command(flatten)]
     pub manifest: clap_cargo::Manifest,
