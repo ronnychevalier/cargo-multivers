@@ -106,12 +106,12 @@ impl<'a> CpusBuilder<'a> {
         let features: BTreeMap<_, _> = self
             .iter
             .filter(|cpu| Self::is_cpu_for_target_valid(&self.triple, cpu))
-            .map(|cpu| -> anyhow::Result<(String, BTreeSet<String>)> {
+            .map(|cpu| {
                 let features = Rustc::features_from_cpu(&self.target, &cpu)?;
 
                 Ok((cpu, features))
             })
-            .collect::<Result<_, _>>()?;
+            .collect::<anyhow::Result<_>>()?;
 
         let features = features
             .into_iter()

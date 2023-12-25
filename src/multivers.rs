@@ -198,7 +198,6 @@ impl Multivers {
                 let cargo = CargoBuild::new()
                     .arg(format!("--profile={}", self.profile))
                     .target(&self.target)
-                    .target_dir(&self.output_directory)
                     .manifest_path(manifest_path)
                     .args(&self.cargo_args)
                     .env("RUSTFLAGS", rust_flags);
@@ -222,14 +221,18 @@ impl Multivers {
                 hasher.update(target_features_flags.as_bytes());
                 let filename = format!("{:x}", hasher.finalize_reset());
 
-                let mut output_path = self
+                let output_path_parent = self
                     .output_directory
                     .join(&self.target)
-                    .join(profile_dir)
+                    .join(profile_dir);
+                let mut output_path = output_path_parent
                     .join(filename);
                 output_path.set_extension(std::env::consts::EXE_EXTENSION);
 
-                std::fs::rename(&bin_path, &output_path)?;
+                std::fs::create_dir_all(&output_path_parent)
+                    .with_context(|| format!("Failed to create directory `{}`", output_path_parent.display()))?;
+                std::fs::copy(&bin_path, &output_path)
+                    .with_context(|| format!("Failed to copy `{}` to `{}`", bin_path.display(), output_path.display()))?;
 
                 let hash = std::fs::read(&output_path).ok().map(|bytes| {
                     hasher.update(&bytes);

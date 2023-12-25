@@ -69,6 +69,23 @@ fn crate_that_prints_argv() {
         )));
 }
 
+/// Checks that `-- --target-dir` works.
+#[test]
+fn target_dir_arg() {
+    let target_dir = tempfile::tempdir().unwrap();
+    let expected_args = ["target", "diiiiir", "''"];
+    build_crate("test-argv", |command| {
+        command.arg("--").arg("--target-dir").arg(target_dir.path());
+    })
+    .args(expected_args)
+    .assert()
+    .success()
+    .stdout(predicate::str::ends_with(format!(
+        "{}\n",
+        expected_args.join(" ")
+    )));
+}
+
 /// Checks that we can build a crate that is part of a workspace.
 ///
 /// Regression test (see #5).

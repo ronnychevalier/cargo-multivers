@@ -175,6 +175,7 @@ dependencies = [
  "serde_json",
  "sha3",
  "target-lexicon",
+ "tempfile",
 ]
 
 [[package]]

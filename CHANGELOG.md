@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Do not propagate the `CARGO_UNSTABLE_BUILD_STD` environment variable to the build of the runner (#7).
 - Return an error on invalid CPUs from `--cpus` or from `cpu` list in `[package.metadata.multivers.ARCH]`.
+- Fix build error when `--target-dir` is given as an argument to cargo build (e.g., `cargo multivers -- --target-dir target_dir`)
 
 [Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.7.0...HEAD
 
