@@ -1,5 +1,5 @@
 name: "cargo-multivers"
-description: "Build multiple versions of the same binary, each with a different CPU features set, merged into a single portable optimized binary"
+description: "Build multiple versions of a binary with different CPU features set merged into one portable optimized binary"
 branding:
   icon: "cpu"
   color: "orange"
