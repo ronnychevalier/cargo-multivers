@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- A GitHub Action `cargo-multivers` is available to help build a binary in your CI and make it available during a release.
 - `--out-dir` to copy the final binaries to a directory.
 
 ### Fixed

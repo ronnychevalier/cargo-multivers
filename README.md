@@ -86,6 +86,64 @@ For instance, you can add to your `Cargo.toml` the following section if you buil
 cpus = ["x86-64", "x86-64-v2", "x86-64-v3", "x86-64-v4"]
 ```
 
+## GitHub Actions Integration
+
+If you want to publish an optimized portable binary built by `cargo-multivers` when releasing a new version of your project,
+you can use the `cargo-multivers` GitHub Action.
+To do that you need to have a Rust nightly toolchain
+and add a step to your job:
+
+```yaml
+    - uses: ronnychevalier/cargo-multivers@main
+```
+
+For example, this can look like:
+
+```yaml
+jobs:
+  cargo-multivers-build:
+    name: Build with cargo-multivers
+    runs-on: windows-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Install Rust nightly
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: nightly
+    - uses: ronnychevalier/cargo-multivers@main
+      with:
+        manifest_path: path/to-your/Cargo.toml
+    - name: Upload release archive
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: the-name-of-your-binary.exe
+
+        ... [other config fields]
+```
+
+### Inputs
+
+You can set two types of inputs.
+The ones that are related to how `cargo-multivers` is installed:
+
+| Name           | Description                                     | Required | Default                                            |
+|----------------|-------------------------------------------------|----------|----------------------------------------------------|
+| version        | Version of cargo-multivers to use (e.g., 0.7.0) | false    | Latest published version on [crates.io][crates.io] |
+
+And the ones that are related to the arguments given to `cargo multivers` (e.g., `target` configures the `--target` option):
+
+| Name           | Description                                     | Required | Default                                            |
+|----------------|-------------------------------------------------|----------|----------------------------------------------------|
+| manifest_path  | Path to Cargo.toml                              | false    |                                                    |
+| target         | Build for the target triple                     | false    |                                                    |
+| out_dir        | Copy final artifacts to this directory          | true     | .                                                  |
+| profile        | Build artifacts with the specified profile      | false    |                                                    |
+| runner_version | Specify the version of the runner to use        | false    |                                                    |
+| other_args     | Other arguments given to cargo multivers        | false    |                                                    |
+| build_args     | Arguments given to cargo build                  | false    |                                                    |
+
 ## Related Work
 
 - If you want to apply this approach only at the function level, take a look at the [multiversion](https://crates.io/crates/multiversion) crate.

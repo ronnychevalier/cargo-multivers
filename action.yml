@@ -1,0 +1,65 @@
+name: "cargo-multivers"
+description: "Build multiple versions of the same binary, each with a different CPU features set, merged into a single portable optimized binary"
+branding:
+  icon: "cpu"
+  color: "orange"
+
+inputs:
+  version:
+    description: "Version of cargo-multivers to use (e.g., 0.7.0)"
+    required: false
+  manifest_path:
+    description: "Path to Cargo.toml"
+    required: false
+  target:
+    description: "Build for the target triple"
+    required: false
+  out_dir:
+    description: "Copy final artifacts to this directory"
+    required: true
+    default: "."
+  profile:
+    description: "Build artifacts with the specified profile (default: release)"
+    required: false
+  runner_version:
+    description: "Specify the version of the runner to use"
+    required: false
+  other_args:
+    description: "Other arguments given to cargo multivers"
+    required: false
+  build_args:
+    description: "Arguments given to cargo build"
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install cargo-multivers (git main)
+      uses: baptiste0928/cargo-install@v2
+      with:
+        crate: cargo-multivers
+        git: https://github.com/ronnychevalier/cargo-multivers
+        branch: main
+      if: "${{ inputs.version == 'main' }}"
+    - name: Install cargo-multivers (version)
+      uses: baptiste0928/cargo-install@v2
+      with:
+        crate: cargo-multivers
+        version: ${{ inputs.version }}
+      if: "${{ inputs.version != '' && inputs.version != 'main' }}"
+    - name: Install cargo-multivers (latest)
+      uses: baptiste0928/cargo-install@v2
+      with:
+        crate: cargo-multivers
+      if: "${{ inputs.version == '' }}"
+    - id: cargo-multivers
+      run: $GITHUB_ACTION_PATH/.github/action/entrypoint.sh
+      shell: bash
+      env:
+        INPUT_MANIFEST_PATH: ${{ inputs.manifest_path }}
+        INPUT_TARGET: ${{ inputs.target }}
+        INPUT_OUT_DIR: ${{ inputs.out_dir }}
+        INPUT_PROFILE: ${{ inputs.profile }}
+        INPUT_RUNNER_VERSION: ${{ inputs.runner_version }}
+        INPUT_OTHER_ARGS: ${{ inputs.other_args }}
+        INPUT_BUILD_ARGS: ${{ inputs.build_args }}
