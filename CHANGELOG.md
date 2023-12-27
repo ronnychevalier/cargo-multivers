@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - A GitHub Action `cargo-multivers` is available to help build a binary in your CI and make it available during a release.
 - `--out-dir` to copy the final binaries to a directory.
 
+### Changed
+
+- Update dependencies.
+
 ### Fixed
 
 - Do not propagate the `CARGO_UNSTABLE_BUILD_STD` environment variable to the build of the runner (#7).
