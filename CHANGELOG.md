@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.8.0...HEAD
+
+## [0.8.0] - 27-12-2023
+
 ### Added
 
 - A GitHub Action `cargo-multivers` is available to help build a binary in your CI and make it available during a release.
@@ -22,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Return an error on invalid CPUs from `--cpus` or from `cpu` list in `[package.metadata.multivers.ARCH]`.
 - Fix build error when `--target-dir` is given as an argument to cargo build (e.g., `cargo multivers -- --target-dir target_dir`)
 
-[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.7.0...HEAD
+[0.8.0]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.7.0...v0.8.0
 
 ## [0.7.0] - 18-12-2023
 
