@@ -118,13 +118,13 @@ impl BuildsDescription {
                 let features = build.features;
                 Ok(quote! {
                     Build {
-                        compressed_build: &[
+                        compressed: &[
                             #(#patch),*
                         ],
                         features: &[
                             #(#features),*
                         ],
-                        source: false,
+                        source: Some(&SOURCE),
                     }
                 })
             })
@@ -133,13 +133,13 @@ impl BuildsDescription {
         let n_builds = patches.len();
         let tokens = quote! {
             const SOURCE: Build<'_> = Build {
-                compressed_build: &[
+                compressed: &[
                     #(#source),*
                 ],
                 features: &[
                     #(#source_features),*
                 ],
-                source: true,
+                source: None,
             };
             const PATCHES: [Build<'_>; #n_builds] = [
                 #(#patches),*

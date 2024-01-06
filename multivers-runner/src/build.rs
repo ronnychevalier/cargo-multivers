@@ -1,5 +1,5 @@
 use std::convert::Infallible;
-use std::io::Write;
+use std::io::{Read, Write};
 
 use bzip2::read::BzDecoder;
 
@@ -8,50 +8,61 @@ use qbsdiff::Bspatch;
 include!(concat!(env!("OUT_DIR"), "/builds.rs"));
 
 /// Stores a build and the CPU features it requires
+#[cfg_attr(test, derive(PartialEq, Eq, Debug, Clone))]
 pub struct Build<'a> {
-    compressed_build: &'a [u8],
+    compressed: &'a [u8],
 
     /// A list of CPU features (e.g., `["avx" , "cmpxchg16b" , "fxsr" , "pclmulqdq" , "popcnt" , "sse" , "sse2" , "sse3" , "sse4.1" , "sse4.2" , "ssse3" , "xsave" , "xsaveopt"]`)
     features: &'a [&'a str],
 
-    /// Whether the build is the source (i.e., it is not a patch, it only needs to be uncompressed)
-    source: bool,
+    /// The source of this build (`None` if it is not a patch, but a source and it only needs to be uncompressed)
+    source: Option<&'a Self>,
+}
+
+impl Default for Build<'_> {
+    fn default() -> Self {
+        SOURCE
+    }
 }
 
 impl Build<'_> {
     /// Extracts the build into a writer
     pub fn extract_into(&self, mut output: impl Write) -> std::io::Result<()> {
-        let mut decoder = BzDecoder::new(SOURCE.compressed_build);
-        if self.source {
-            std::io::copy(&mut decoder, &mut output)?;
-        } else {
-            let patcher = Bspatch::new(self.compressed_build)?;
+        if let Some(source) = self.source {
+            let mut decoder = BzDecoder::new(source.compressed);
+            let patcher = Bspatch::new(self.compressed)?;
 
-            let mut source = Vec::new();
-            std::io::copy(&mut decoder, &mut source)?;
+            let mut source = Vec::with_capacity(source.compressed.len());
+            decoder.read_to_end(&mut source)?;
 
             patcher.apply(&source, output)?;
+        } else {
+            let mut decoder = BzDecoder::new(self.compressed);
+
+            std::io::copy(&mut decoder, &mut output)?;
         }
 
         Ok(())
     }
 
     /// Finds a version that matches the CPU features of the host
-    pub fn find() -> Self {
+    pub fn find_from(builds: impl IntoIterator<Item = Self>) -> Option<Self> {
         let supported_features: Vec<&str> = notstd_detect::detect::features()
             .filter_map(|(feature, supported)| supported.then_some(feature))
             .collect();
 
-        PATCHES
-            .into_iter()
-            .find_map(|build| {
-                build
-                    .features
-                    .iter()
-                    .all(|feature| supported_features.contains(feature))
-                    .then_some(build)
-            })
-            .unwrap_or(SOURCE)
+        builds.into_iter().find_map(|build| {
+            build
+                .features
+                .iter()
+                .all(|feature| supported_features.contains(feature))
+                .then_some(build)
+        })
+    }
+
+    /// Finds a version that matches the CPU features of the host
+    pub fn find() -> Option<Self> {
+        Self::find_from(PATCHES)
     }
 }
 
@@ -80,5 +91,85 @@ cfg_if::cfg_if! {
         mod linux;
     } else {
         mod generic;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::Read;
+
+    use bzip2::read::BzEncoder;
+    use bzip2::Compression;
+
+    use crate::Build;
+
+    #[test]
+    fn find_none() {
+        assert_eq!(Build::find_from(None), None);
+    }
+
+    #[cfg(target_feature = "sse")]
+    #[test]
+    fn find_x86_sse() {
+        let build = Build {
+            compressed: b"test",
+            features: &["sse"],
+            source: None,
+        };
+        assert_eq!(
+            Build::find_from(std::iter::once(build.clone())),
+            Some(build)
+        );
+    }
+
+    #[test]
+    fn find_no_features() {
+        let build = Build {
+            compressed: b"test",
+            features: &[],
+            source: None,
+        };
+        assert_eq!(
+            Build::find_from(std::iter::once(build.clone())),
+            Some(build)
+        );
+    }
+
+    #[test]
+    fn find_feature_not_found() {
+        let build = Build {
+            compressed: b"test",
+            features: &["unknown feature"],
+            source: None,
+        };
+        assert_eq!(Build::find_from(std::iter::once(build.clone())), None);
+    }
+
+    #[test]
+    fn extract_into_fail_not_compressed() {
+        let build = Build {
+            compressed: b"test",
+            features: &[],
+            source: None,
+        };
+        let mut v = vec![];
+        build.extract_into(&mut v).unwrap_err();
+    }
+
+    #[test]
+    fn extract_into() {
+        let expected_data = b"data that will be compressed";
+        let mut encoder = BzEncoder::new(expected_data.as_slice(), Compression::best());
+        let mut compressed = vec![];
+        encoder.read_to_end(&mut compressed).unwrap();
+
+        let build = Build {
+            compressed: &compressed,
+            features: &[],
+            source: None,
+        };
+        let mut decompressed_data = vec![];
+        build.extract_into(&mut decompressed_data).unwrap();
+        assert_eq!(&decompressed_data, &expected_data);
     }
 }

@@ -35,7 +35,7 @@ pub unsafe extern "C" fn main(argc: i32, argv: *const *const i8, envp: *const *c
 }
 
 unsafe fn run(argc: i32, argv: *const *const i8, envp: *const *const i8) -> proc_exit::ExitResult {
-    Build::find().exec(argc, argv, envp)?;
+    Build::find().unwrap_or_default().exec(argc, argv, envp)?;
 
     Ok(())
 }
