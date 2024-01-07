@@ -13,6 +13,14 @@ on:
     - '!/*.md'
     - "!/LICENSE-*"
 jobs:
+  typos:
+    name: Spell Check with Typos
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: typos
+      uses: crate-ci/typos@master
   test:
     name: Test
     strategy:
