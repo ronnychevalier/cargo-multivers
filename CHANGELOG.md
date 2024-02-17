@@ -7,11 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.8.1...HEAD
+
+## [0.8.1]
+
 ### Changed
 
 - Update dependencies.
 
-[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.8.0...HEAD
+### Fixed
+
+- Build of `multivers-runner` with recent nightly
+
+[0.8.1]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.8.0...v0.8.1
 
 ## [0.8.0] - 27-12-2023
 
