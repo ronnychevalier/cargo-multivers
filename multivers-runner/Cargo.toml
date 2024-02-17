@@ -11,7 +11,7 @@ repository = "https://github.com/ronnychevalier/cargo-multivers"
 
 [dependencies]
 cfg-if = "1"
-notstd_detect = "0.2.0"
+notstd_detect = "0.3.0"
 proc-exit = "2"
 qbsdiff = "1.4.0"
 bzip2 = { version = "0.4", features = ["static"] }

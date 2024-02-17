@@ -19,7 +19,7 @@ include = ["README.md", "CHANGELOG.md", "/src/*", "/LICENSE*"]
 anyhow = "1.0.70"
 escargot = "0.5.8"
 clap = { version = "4.4", features = ["derive", "cargo"] }
-clap-cargo = { version = "0.13", features = ["cargo_metadata"] }
+clap-cargo = { version = "0.14", features = ["cargo_metadata"] }
 cargo_metadata = "0.18"
 target-lexicon = { version = "0.12", features = ["std"] }
 console = "0.15"
