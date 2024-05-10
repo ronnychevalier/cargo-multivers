@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Update dependencies.
+
 [Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.8.1...HEAD
 
 ## [0.8.1]
