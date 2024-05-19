@@ -58,6 +58,7 @@ improper_ctypes = "warn"
 improper_ctypes_definitions = "warn"
 non_ascii_idents = "warn"
 rust_2018_idioms = "warn"
+rust_2024_compatibility = "warn"
 single_use_lifetimes = "warn"
 
 [workspace.lints.clippy]

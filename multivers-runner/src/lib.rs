@@ -29,13 +29,15 @@ use build::{Build, Executable};
 #[no_mangle]
 #[cfg(not(test))]
 pub unsafe extern "C" fn main(argc: i32, argv: *const *const i8, envp: *const *const i8) {
-    let result = run(argc, argv, envp);
+    let result = unsafe { run(argc, argv, envp) };
 
     proc_exit::exit(result);
 }
 
 unsafe fn run(argc: i32, argv: *const *const i8, envp: *const *const i8) -> proc_exit::ExitResult {
-    Build::find().unwrap_or_default().exec(argc, argv, envp)?;
+    let build = Build::find().unwrap_or_default();
+
+    unsafe { build.exec(argc, argv, envp) }?;
 
     Ok(())
 }
