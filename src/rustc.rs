@@ -59,8 +59,10 @@ impl Rustc {
             ])
             .output()?;
 
-        anyhow::ensure!(cfg.status.success(), "Invalid CPU `{cpu}`");
-        anyhow::ensure!(cfg.stderr.is_empty(), "Invalid CPU `{cpu}`");
+        anyhow::ensure!(
+            cfg.status.success() && cfg.stderr.is_empty(),
+            "Invalid CPU `{cpu}`"
+        );
 
         let features = cfg
             .stdout

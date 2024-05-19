@@ -109,7 +109,7 @@ impl MultiversMetadata {
 mod tests {
     use std::collections::HashMap;
 
-    use serde_json::json;
+    use serde_json::{json, Value};
 
     use target_lexicon::Architecture;
 
@@ -195,5 +195,33 @@ mod tests {
         });
 
         MultiversMetadata::from_value(&value).unwrap_err();
+    }
+
+    #[test]
+    fn test_without_metadata() {
+        let value = json!({
+            "somethingelse": {
+                "aaaa": {
+                    "bbb": []
+                }
+            }
+        });
+
+        assert_eq!(MultiversMetadata::from_value(&value).unwrap(), None);
+        assert_eq!(MultiversMetadata::from_value(&Value::Null).unwrap(), None);
+    }
+
+    #[test]
+    fn test_metadata_null() {
+        assert_eq!(MultiversMetadata::from_value(&Value::Null).unwrap(), None);
+    }
+
+    #[test]
+    fn test_empty_targets() {
+        let value = json!({
+            "multivers": {}
+        });
+
+        assert_eq!(MultiversMetadata::from_value(&value).unwrap(), None);
     }
 }

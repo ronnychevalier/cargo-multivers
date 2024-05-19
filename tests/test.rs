@@ -8,33 +8,41 @@ use escargot::CargoBuild;
 use predicates::prelude::*;
 
 #[cfg(test)]
-fn build_crate(
-    name: &str,
-    modify_command_callback: impl FnOnce(&mut std::process::Command),
-) -> (Command, tempfile::TempDir) {
-    let out_dir: tempfile::TempDir = tempfile::tempdir().unwrap();
+fn cargo_multivers() -> Command {
     let multivers_manifest = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
-    let test_manifest = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests")
-        .join(name)
-        .join("Cargo.toml");
 
-    let mut command = CargoBuild::new()
+    let mut cargo_multivers = CargoBuild::new()
         .manifest_path(multivers_manifest)
         .run()
         .unwrap()
         .command();
 
-    command
-        .arg("multivers")
+    cargo_multivers.arg("multivers");
+
+    cargo_multivers
+}
+
+#[cfg(test)]
+fn build_crate(
+    name: &str,
+    modify_command_callback: impl FnOnce(&mut std::process::Command),
+) -> (Command, tempfile::TempDir) {
+    let out_dir: tempfile::TempDir = tempfile::tempdir().unwrap();
+    let test_manifest = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join(name)
+        .join("Cargo.toml");
+
+    let mut cargo_multivers = cargo_multivers();
+    cargo_multivers
         .arg("--manifest-path")
         .arg(test_manifest)
         .arg("--out-dir")
         .arg(out_dir.path());
 
-    modify_command_callback(&mut command);
+    modify_command_callback(&mut cargo_multivers);
 
-    let _assert = command.assert().success();
+    let _assert: assert_cmd::assert::Assert = cargo_multivers.assert().success();
 
     let multivers_runner = out_dir
         .path()
@@ -44,6 +52,20 @@ fn build_crate(
     assert!(multivers_runner.exists());
 
     (Command::new(multivers_runner), out_dir)
+}
+
+#[test]
+fn print_cpu_features() {
+    let mut cargo_multivers = cargo_multivers();
+    cargo_multivers.arg("--print=cpu-features");
+    cargo_multivers.arg("--target=x86_64-unknown-linux-gnu");
+    let assert = cargo_multivers.assert().success();
+    let output = &assert.get_output().stdout;
+    assert!(!output.is_empty());
+
+    let output = String::from_utf8_lossy(output);
+    assert!(output.contains("avx2"));
+    assert!(output.contains("xsave"));
 }
 
 /// Checks that we can build a crate that does nothing and that it can run successfully.
@@ -117,6 +139,22 @@ fn rebuild_std_env() {
     let expected_args = ["z", "foo2", "''"];
     build_crate("test-argv", |command| {
         command.env("CARGO_UNSTABLE_BUILD_STD", "std");
+    })
+    .0
+    .args(expected_args)
+    .assert()
+    .success()
+    .stdout(predicate::str::ends_with(format!(
+        "{}\n",
+        expected_args.join(" ")
+    )));
+}
+
+#[test]
+fn profile_dev() {
+    let expected_args = ["z", "foo2", "''"];
+    build_crate("test-argv", |command| {
+        command.arg("--profile=dev");
     })
     .0
     .args(expected_args)
