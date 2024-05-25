@@ -1,11 +1,9 @@
 use std::collections::BTreeSet;
 use std::io::BufRead;
+use std::ops::Deref;
 use std::path::PathBuf;
 use std::process::Command;
-
-use once_cell::sync::Lazy;
-
-use rustc_version::Channel;
+use std::sync::OnceLock;
 
 // We do not call "cargo rustc" (which would be simpler),
 // because it takes too much time to execute each time.
@@ -22,6 +20,29 @@ static RUSTC: Lazy<PathBuf> = Lazy::new(|| {
         .unwrap_or_else(|| "rustc".into())
 });
 
+struct Lazy<T> {
+    cell: OnceLock<T>,
+    init: fn() -> T,
+}
+
+impl<T> Lazy<T> {
+    pub const fn new(init: fn() -> T) -> Self {
+        Self {
+            cell: OnceLock::new(),
+            init,
+        }
+    }
+}
+
+impl<T> Deref for Lazy<T> {
+    type Target = T;
+
+    #[inline]
+    fn deref(&self) -> &'_ T {
+        self.cell.get_or_init(self.init)
+    }
+}
+
 /// Wrapper around the `rustc` command
 pub struct Rustc;
 
@@ -32,8 +53,18 @@ impl Rustc {
 
     /// Returns true if rustc is on the nightly release channel
     pub fn is_nightly() -> bool {
-        rustc_version::VersionMeta::for_command(Self::command())
-            .map_or(false, |version| version.channel == Channel::Nightly)
+        let Ok(rustc_v) = Self::command().arg("-vV").output() else {
+            return false;
+        };
+
+        let release = rustc_v
+            .stdout
+            .lines()
+            .map_while(Result::ok)
+            .find_map(|line| line.strip_prefix("release: ").map(ToOwned::to_owned))
+            .unwrap_or_default();
+
+        release.contains("nightly")
     }
 
     /// Returns the default target that rustc uses to build if none is provided (the host)
