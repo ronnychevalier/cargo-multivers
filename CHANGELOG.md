@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Define default CPUs for `x86-64` using [microarchitecture levels](https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels): `x86-64,x86-64-v2,x86-64-v3,x86-64-v4`. It helps to limit build times ([#6](https://github.com/ronnychevalier/cargo-multivers/issues/6)).
+
 ### Changed
 
 - Update dependencies.

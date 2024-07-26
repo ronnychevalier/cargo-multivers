@@ -24,8 +24,9 @@ fn main() -> anyhow::Result<()> {
     if matches!(args.print, Some(Print::CpuFeatures)) {
         let target = args.target()?.into_owned();
 
-        let cpus = Cpus::builder(target, args.cpus)
+        let cpus = Cpus::builder(target)
             .context("Failed to get the set of CPU features for the target")?
+            .cpus(args.cpus)
             .build()?;
         let mut stdout = std::io::stdout().lock();
         for feature in cpus.features() {

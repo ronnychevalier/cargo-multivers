@@ -10,6 +10,7 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 
 use itertools::Itertools;
 
+use crate::metadata::{MultiversMetadata, TargetMetadata};
 use crate::rustc::Rustc;
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -40,11 +41,8 @@ pub struct Cpus {
 }
 
 impl Cpus {
-    pub fn builder<'a>(
-        target: impl Into<String>,
-        cpus: Option<Vec<String>>,
-    ) -> anyhow::Result<CpusBuilder<'a>> {
-        CpusBuilder::new(target, cpus)
+    pub fn builder(target: impl Into<String>) -> anyhow::Result<CpusBuilder> {
+        CpusBuilder::new(target)
     }
 
     /// Returns a sorted and deduplicated iterator of CPU features set for each CPU
@@ -67,44 +65,65 @@ impl Cpus {
     }
 }
 
-pub struct CpusBuilder<'a> {
-    iter: rayon::vec::IntoIter<String>,
-    excluded_features: Option<&'a [String]>,
+#[derive(Clone)]
+pub struct CpusBuilder {
+    excluded_features: Option<Vec<String>>,
     target: String,
     triple: Triple,
+    cpus: Option<Vec<String>>,
+    metadata_cpus: Option<Vec<String>>,
 }
 
-impl<'a> CpusBuilder<'a> {
-    pub fn new(target: impl Into<String>, cpus: Option<Vec<String>>) -> anyhow::Result<Self> {
+impl CpusBuilder {
+    pub fn new(target: impl Into<String>) -> anyhow::Result<Self> {
         let target = target.into();
         let triple = Triple::from_str(&target).context("Failed to parse the target")?;
-        let iter = if let Some(cpus) = cpus {
-            cpus
-        } else {
-            Rustc::cpus_from_target(&target)
-                .context("Failed to get the set of CPUs for the target")?
-        }
-        .into_par_iter();
 
         Ok(Self {
-            iter,
             excluded_features: None,
             target,
             triple,
+            cpus: None,
+            metadata_cpus: None,
         })
+    }
+
+    pub fn cpus(mut self, cpus: impl Into<Option<Vec<String>>>) -> Self {
+        self.cpus = cpus.into();
+        self
+    }
+
+    pub fn metadata(mut self, metadata: &MultiversMetadata) -> anyhow::Result<Self> {
+        if let Some(cpus) = metadata
+            .get(&self.triple.architecture)
+            .and_then(TargetMetadata::cpus)
+        {
+            anyhow::ensure!(!cpus.is_empty(), "Empty list of CPUs");
+
+            self.metadata_cpus = Some(cpus.to_vec());
+        }
+
+        Ok(self)
     }
 
     /// Excludes the given list of CPU features when building the set of CPUs and their features.
     ///
     /// If a CPU no longer has any feature, it is not included in the final list.
-    pub fn exclude_features(mut self, cpu_features: impl Into<Option<&'a [String]>>) -> Self {
+    pub fn exclude_features(mut self, cpu_features: impl Into<Option<Vec<String>>>) -> Self {
         self.excluded_features = cpu_features.into();
         self
     }
 
-    pub fn build(self) -> anyhow::Result<Cpus> {
-        let features: BTreeMap<_, _> = self
-            .iter
+    pub fn build(&self) -> anyhow::Result<Cpus> {
+        let iter = if let Some(cpus) = self.cpus.as_ref().or(self.metadata_cpus.as_ref()) {
+            cpus.to_owned()
+        } else {
+            Rustc::cpus_from_target(&self.target)
+                .context("Failed to get the set of CPUs for the target")?
+        }
+        .into_par_iter();
+
+        let features: BTreeMap<_, _> = iter
             .filter(|cpu| Self::is_cpu_for_target_valid(&self.triple, cpu))
             .map(|cpu| {
                 let features = Rustc::features_from_cpu(&self.target, &cpu)?;
@@ -116,7 +135,7 @@ impl<'a> CpusBuilder<'a> {
         let features = features
             .into_iter()
             .filter_map(|(cpu, mut features)| {
-                for exclude in self.excluded_features.into_iter().flatten() {
+                for exclude in self.excluded_features.iter().flatten() {
                     features.remove(exclude);
                 }
                 if features.is_empty() {

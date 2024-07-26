@@ -7,6 +7,3 @@ publish = false
 
 [profile.release]
 strip = "symbols"
-
-[package.metadata.multivers.x86_64]
-cpus = ["x86-64", "x86-64-v2", "x86-64-v3"]

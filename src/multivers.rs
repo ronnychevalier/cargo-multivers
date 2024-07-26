@@ -17,16 +17,14 @@ use target_lexicon::{Environment, Triple};
 
 use indicatif::{ProgressBar, ProgressStyle};
 
-use itertools::Itertools;
-
 use console::{style, Term};
 
 use sha3::{Digest, Sha3_256};
 
 use crate::cargo::CommandMessagesExt;
 use crate::cli::Args;
-use crate::features::{CpuFeatures, Cpus};
-use crate::metadata::{MultiversMetadata, TargetMetadata};
+use crate::features::{CpuFeatures, Cpus, CpusBuilder};
+use crate::metadata::MultiversMetadata;
 use crate::runner::RunnerBuilder;
 
 #[derive(Serialize)]
@@ -56,7 +54,7 @@ pub struct Multivers {
     target_dir: PathBuf,
     out_dir: Option<PathBuf>,
     features: clap_cargo::Features,
-    cpus: Cpus,
+    cpus: CpusBuilder,
     progress: ProgressBar,
     profile: String,
     cargo_args: Vec<String>,
@@ -74,11 +72,10 @@ impl Multivers {
         // (which we don't want since we might build with features not supported by the CPU building the package).
         // See https://github.com/rust-lang/cargo/issues/4423
         let target = args.target()?.into_owned();
-
-        let cpus = Cpus::builder(target.clone(), args.cpus)
+        let cpus = Cpus::builder(target.clone())
             .context("Failed to get the set of CPU features for the target")?
-            .exclude_features(args.exclude_cpu_features.as_deref())
-            .build()?;
+            .exclude_features(args.exclude_cpu_features)
+            .cpus(args.cpus);
 
         let target_dir = metadata
             .target_directory
@@ -118,30 +115,10 @@ impl Multivers {
         })
     }
 
-    fn cpu_features(
-        &self,
-        triple: &Triple,
-        metadata: Option<&MultiversMetadata>,
-    ) -> anyhow::Result<Vec<CpuFeatures>> {
-        if let Some(cpus) = metadata.and_then(|metadata| {
-            metadata
-                .get(&triple.architecture)
-                .and_then(TargetMetadata::cpus)
-        }) {
-            anyhow::ensure!(!cpus.is_empty(), "Empty list of CPUs");
+    fn cpu_features(&self, metadata: &MultiversMetadata) -> anyhow::Result<Vec<CpuFeatures>> {
+        let cpus = self.cpus.clone().metadata(metadata)?.build()?;
 
-            cpus.iter()
-                .unique()
-                .map(|cpu| {
-                    self.cpus
-                        .get(cpu)
-                        .cloned()
-                        .ok_or_else(|| anyhow::anyhow!("Unknown CPU `{cpu}`"))
-                })
-                .collect::<anyhow::Result<_>>()
-        } else {
-            Ok(self.cpus.features_sets().cloned().collect())
-        }
+        Ok(cpus.features_sets().cloned().collect())
     }
 
     fn build_package(&self, package: &Package) -> anyhow::Result<BuildsDescription> {
@@ -151,9 +128,9 @@ impl Multivers {
         let features_list = self.features.features.join(" ");
         let mut rust_flags = std::env::var("RUSTFLAGS").unwrap_or_default();
 
-        let metadata = MultiversMetadata::from_package(package)
+        let metadata = MultiversMetadata::from_package_with_default(package)
             .context("Failed to parse package's metadata")?;
-        let cpu_features = self.cpu_features(&triple, metadata.as_ref())?;
+        let cpu_features = self.cpu_features(&metadata)?;
 
         if cpu_features.is_empty() {
             anyhow::bail!("Empty set of CPU features");
