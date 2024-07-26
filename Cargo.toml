@@ -2,18 +2,24 @@
 name = "cargo-multivers"
 version = "0.8.1"
 description = "Cargo subcommand to build multiple versions of the same binary, each with a different CPU features set, merged into a single portable optimized binary"
-edition = "2021"
+edition.workspace = true
 readme = "README.md"
-license = "MIT OR Apache-2.0"
+license.workspace = true
 categories = [
     "hardware-support",
     "command-line-utilities",
     "development-tools::cargo-plugins",
 ]
 keywords = ["performance", "optimization", "cargo", "cpu", "multivers"]
-rust-version = "1.80"
-repository = "https://github.com/ronnychevalier/cargo-multivers"
+rust-version.workspace = true
+repository.workspace = true
 include = ["README.md", "CHANGELOG.md", "/src/*", "/LICENSE*"]
+
+[workspace.package]
+rust-version = "1.80"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ronnychevalier/cargo-multivers"
 
 [dependencies]
 anyhow = "1.0.70"

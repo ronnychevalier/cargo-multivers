@@ -2,12 +2,12 @@
 name = "multivers-runner"
 version = "0.1.1"
 description = "Library to create a portable binary that embeds multiple versions of an executable each using a different CPU feature set"
-edition = "2021"
+edition.workspace = true
 readme = "README.md"
-license = "MIT OR Apache-2.0"
+license.workspace = true
 categories = ["hardware-support"]
 keywords = ["performance", "optimization", "cargo", "cpu", "multivers"]
-repository = "https://github.com/ronnychevalier/cargo-multivers"
+repository.workspace = true
 
 [dependencies]
 cfg-if = "1"
