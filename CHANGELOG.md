@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - Update dependencies.
+- MSRV is now 1.80.
 
 [Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.8.1...HEAD
 

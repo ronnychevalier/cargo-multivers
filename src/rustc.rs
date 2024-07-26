@@ -1,14 +1,13 @@
 use std::collections::BTreeSet;
 use std::io::BufRead;
-use std::ops::Deref;
 use std::path::PathBuf;
 use std::process::Command;
-use std::sync::OnceLock;
+use std::sync::LazyLock;
 
 // We do not call "cargo rustc" (which would be simpler),
 // because it takes too much time to execute each time.
 // Calling rustc directly is faster.
-static RUSTC: Lazy<PathBuf> = Lazy::new(|| {
+static RUSTC: LazyLock<PathBuf> = LazyLock::new(|| {
     std::env::var_os("CARGO")
         .map(PathBuf::from)
         .and_then(|path| {
@@ -19,29 +18,6 @@ static RUSTC: Lazy<PathBuf> = Lazy::new(|| {
         })
         .unwrap_or_else(|| "rustc".into())
 });
-
-struct Lazy<T> {
-    cell: OnceLock<T>,
-    init: fn() -> T,
-}
-
-impl<T> Lazy<T> {
-    pub const fn new(init: fn() -> T) -> Self {
-        Self {
-            cell: OnceLock::new(),
-            init,
-        }
-    }
-}
-
-impl<T> Deref for Lazy<T> {
-    type Target = T;
-
-    #[inline]
-    fn deref(&self) -> &'_ T {
-        self.cell.get_or_init(self.init)
-    }
-}
 
 /// Wrapper around the `rustc` command
 pub struct Rustc;

@@ -11,7 +11,7 @@ categories = [
     "development-tools::cargo-plugins",
 ]
 keywords = ["performance", "optimization", "cargo", "cpu", "multivers"]
-rust-version = "1.74"
+rust-version = "1.80"
 repository = "https://github.com/ronnychevalier/cargo-multivers"
 include = ["README.md", "CHANGELOG.md", "/src/*", "/LICENSE*"]
 
