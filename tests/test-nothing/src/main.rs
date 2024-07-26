@@ -18,6 +18,7 @@ pub unsafe extern "C" fn _start() {
     let _ = syscalls::syscall!(syscalls::Sysno::exit, 0);
 }
 
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(_panic: &core::panic::PanicInfo<'_>) -> ! {
     loop {}
