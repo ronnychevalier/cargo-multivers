@@ -52,6 +52,7 @@ exclude = [
     "tests/test-argv",
     "tests/test-nothing",
     "tests/test-workspace",
+    "tests/test-nobin",
 ]
 
 [workspace.lints.rust]

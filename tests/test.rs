@@ -178,6 +178,7 @@ fn rebuild_std_env() {
     )));
 }
 
+/// Checks that we can build using the dev profile
 #[test]
 fn profile_dev() {
     let expected_args = ["z", "foo2", "''"];
@@ -192,4 +193,17 @@ fn profile_dev() {
         "{}\n",
         expected_args.join(" ")
     )));
+}
+
+/// Checks that users receive a message explaining that library only crates are not supported
+///
+/// See #12
+#[test]
+fn no_bin() {
+    build_crate("test-nobin", |_| ())
+        .0
+        .failure()
+        .stderr(predicate::eq(
+        "Error: No binary package detected. Only binaries can be built using cargo multivers.\n",
+    ));
 }

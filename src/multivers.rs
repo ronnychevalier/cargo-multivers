@@ -277,6 +277,15 @@ impl Multivers {
     pub fn build(&self) -> anyhow::Result<()> {
         let (selected_packages, _) = self.workspace.partition_packages(&self.metadata);
 
+        let has_bins = selected_packages
+            .iter()
+            .any(|&package| package.targets.iter().any(|target| target.is_bin()));
+        if !has_bins {
+            anyhow::bail!(
+                "No binary package detected. Only binaries can be built using cargo multivers."
+            );
+        }
+
         let profile_dir = if self.profile == "dev" {
             "debug"
         } else {

@@ -1,0 +1,6 @@
+[package]
+name = "test-nobin"
+edition = "2021"
+publish = false
+
+[dependencies]
