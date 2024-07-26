@@ -81,6 +81,7 @@ cargo = "warn"
 cast_lossless = "warn"
 trailing_empty_array = "warn"
 as_ptr_cast_mut = "warn"
+lint_groups_priority = "allow"
 
 [lints]
 workspace = true
