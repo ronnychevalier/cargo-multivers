@@ -37,28 +37,26 @@ impl RunnerBuilder {
         };
 
         let manifest = format!(
-            r#"
-        [package]
-        name = "package-multivers"
-        version = "0.1.0"
-        edition = "2021"
-        
-        [dependencies]
-        {dependency}
+            r#"[package]
+name = "package-multivers"
+publish = false
+edition = "2021"
 
-        [profile.release]
-        lto = true
-        strip = "symbols"
-        opt-level = "z"
-        codegen-units = 1
-        panic = "abort"
+[dependencies]
+{dependency}
 
-        [workspace]
+[profile.release]
+lto = true
+strip = "symbols"
+opt-level = "z"
+codegen-units = 1
+panic = "abort"
+
+[workspace]
         "#
         );
-        let main = b"
-        #![no_main]
-        pub use multivers_runner::main;
+        let main = b"#![no_main]
+pub use multivers_runner::main;
         ";
 
         std::fs::create_dir_all(&src_directory)?;
