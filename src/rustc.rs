@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn test_finds_rustc_without_env_cargo() {
-        std::env::remove_var("CARGO");
+        unsafe { std::env::remove_var("CARGO") };
         let target = Rustc::default_target().unwrap();
         Triple::from_str(&target).unwrap();
     }
