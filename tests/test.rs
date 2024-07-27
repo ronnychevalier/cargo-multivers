@@ -51,7 +51,8 @@ fn build_and_run_crate(
     name: &str,
     modify_command_callback: impl FnOnce(&mut std::process::Command),
 ) -> (Command, tempfile::TempDir) {
-    let (_assert, out_dir) = build_crate(name, modify_command_callback);
+    let (assert, out_dir) = build_crate(name, modify_command_callback);
+    println!("{assert}");
 
     let multivers_runner = out_dir
         .path()
@@ -108,6 +109,7 @@ fn crate_that_prints_argv() {
 ///
 /// See #11
 #[test]
+#[cfg_attr(coverage, ignore)]
 fn crate_cargo_config_invalid() {
     let cargo_home = tempfile::tempdir().unwrap();
     let invalid_config = r#"[build]
