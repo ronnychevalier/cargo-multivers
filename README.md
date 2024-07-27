@@ -13,7 +13,8 @@ Each version is built with a set of CPU features (e.g., `+cmpxchg16b,+fxsr,+sse,
 
 By default, it lists the CPUs known to `rustc` for a given target, then it fetches each set of CPU features and filters out
 the duplicates (i.e., the CPUs that support the same extensions).
-You can also add a section to your `Cargo.toml` to set the allowed list of CPUs for your package.
+On `x86_64`, by default, it limits the CPUs to the four [microarchitecture levels][microarchitecture-levels] (`x86-64,x86-64-v2,x86-64-v3,x86-64-v4`) to limit the build time.
+But, you can define a section in your `Cargo.toml` to set the allowed list of CPUs for your package.
 For example, for `x86_64` you could add:
 
 ```toml
@@ -24,7 +25,7 @@ cpus = ["x86-64", "x86-64-v2", "x86-64-v3", "x86-64-v4", "raptorlake"]
 After building the different versions, it computes a hash of each version and it filters out the duplicates
 (i.e., the compilations that gave the same binaries despite having different CPU features).
 Finally, it builds a runner that embeds one version compressed (the source) and the others as compressed binary patches to the source.
-For instance, when building for the target `x86_64-pc-windows-msvc`, by default 37 different versions
+For instance, when building for the target `x86_64-pc-windows-msvc`, by default 4 different versions
 will be built, filtered, compressed, and merged into a single portable binary.
 
 When executed, the runner uncompresses and executes the version that matches the CPU features
@@ -43,15 +44,6 @@ it is mostly intended for the following use cases:
 > you can just use [`-C target-cpu=native`][target-cpu] like this: `RUSTFLAGS=-Ctarget-cpu=native cargo build --release`.
 > You will save some CPU cycles :)
 
-## Supported Operating Systems
-
-This project is tested on Windows and Linux (due to the use of `memfd_create`, only Linux >= v3.17 is supported).
-
-## Supported Architectures
-
-In theory the following architectures are supported: x86, x86_64, arm, aarch64, riscv32, riscv64, powerpc, powerpc64, mips, and mips64.
-But only x86_64 is tested.
-
 ## Installation
 
 ```bash
@@ -64,25 +56,43 @@ cargo install --locked cargo-multivers
 cargo +nightly multivers
 ```
 
+## Supported Operating Systems
+
+This project is tested on Windows and Linux (due to the use of `memfd_create`, only Linux >= v3.17 is supported).
+
+## Supported Architectures
+
+In theory the following architectures are supported: x86, x86_64, arm, aarch64, riscv32, riscv64, powerpc, powerpc64, mips, and mips64.
+But only x86_64 is tested.
+
+### Default CPU List
+
+To limit build time, `cargo multivers` defines by default for some architectures a limited number of CPUs to build with.
+
+|Architecture|CPUs       |
+|------------|-----------|
+|`x86_64`    | [`x86-64,x86-64-v2,x86-64-v3,x86-64-v4`][microarchitecture-levels] |
+|`*`         | All |
+
+You can override this with either the `--cpus` option on the command line,
+or by defining a key in your `Cargo.toml`:
+
+```toml
+[package.metadata.multivers.ARCHITECTURE_NAME]
+cpus = ["...", "..."]
+```
+
 ## Recommendations
 
 `cargo multivers` uses the `release` [profile](https://doc.rust-lang.org/cargo/reference/profiles.html) of your package to build the binary (`[profile.release]`).
 To optimize the size of your binary and to reduce the startup time, it is recommended [to enable features that can reduce the size][min-sized-rust] of each build.
-For example, you can have the following profile that reduce the size of your binary, while still prioritizing speed optimizations and not increasing significantly the build time:
+For example, you can have the following profile that reduce the size of your binary, while not increasing significantly the build time:
 
 ```toml
 [profile.release]
 strip = "symbols"
 panic = "abort"
 lto = "thin"
-```
-
-To reduce the total build time, it might be best to limit the set of CPUs for which the project will be built.
-For instance, you can add to your `Cargo.toml` the following section if you build for `x86_64`:
-
-```toml
-[package.metadata.multivers.x86_64]
-cpus = ["x86-64", "x86-64-v2", "x86-64-v3", "x86-64-v4"]
 ```
 
 ## GitHub Actions Integration
@@ -169,3 +179,4 @@ additional terms or conditions.
 [license-image]: https://img.shields.io/crates/l/cargo-multivers.svg
 [min-sized-rust]: https://github.com/johnthagen/min-sized-rust
 [target-cpu]: https://doc.rust-lang.org/rustc/codegen-options/index.html#target-cpu
+[microarchitecture-levels]: https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels
