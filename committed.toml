@@ -1,0 +1,23 @@
+subject_length = 72
+subject_capitalized = false
+subject_not_punctuated = true
+imperative_subject = true
+no_fixup = true
+no_wip = true
+hard_line_length = 0
+line_length = 72
+style = "conventional"
+allowed_types = [
+    "fix",
+    "feat",
+    "chore",
+    "docs",
+    "style",
+    "refactor",
+    "perf",
+    "test",
+    "ci",
+    "build",
+    "revert",
+]
+merge_commit = true
