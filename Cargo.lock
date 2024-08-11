@@ -524,9 +524,9 @@ checksum = "61807f77802ff30975e01f4f071c8ba10c022052f98b3294119f3e615d13e5be"
 
 [[package]]
 name = "notstd_detect"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a953028f98fafc94ec192057ca06fed660ed22399278986541b3fa346895ea7d"
+checksum = "aeafa2e428b35a2ac861a75aa1a58a8dd2190d6fbe4077e2797cba032d68047b"
 dependencies = [
  "cfg-if",
  "libc",
