@@ -57,6 +57,11 @@ impl Rustc {
 
     /// Returns all CPU features supported by a given CPU on a target
     pub fn features_from_cpu(target: &str, cpu: &str) -> anyhow::Result<BTreeSet<String>> {
+        let ignored_features = [
+            // See https://github.com/rust-lang/rust/issues/116344
+            "x87",
+        ];
+
         let cfg = Self::command()
             .args([
                 "--print=cfg",
@@ -84,6 +89,7 @@ impl Rustc {
 
                 line.strip_suffix('"').map(ToOwned::to_owned)
             })
+            .filter(|feature| !ignored_features.contains(&feature.as_str()))
             .collect();
 
         Ok(features)
