@@ -21,7 +21,7 @@ impl Executable for Build<'_> {
         let memfd_name = if argc > 0 {
             unsafe { CStr::from_ptr(*argv) }
         } else {
-            unsafe { CStr::from_bytes_with_nul_unchecked(b"\0") }
+            c""
         };
         let mut file = memfd_create(memfd_name, MemfdFlags::CLOEXEC)
             .map(OwnedFd::into_raw_fd)
