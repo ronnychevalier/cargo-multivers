@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.9.1...HEAD
+
+## [0.9.1] - 2025-02-19
+
+### Bug Fixes
+
+- Filter out x87 feature on x86-64
+
+### Documentation
+
+- Mention the default CPUs for x86_64
+
+### Refactor
+
+- Replace build script with `unexpected_cfgs` lint
+- Mark `no_mangle` attributes as unsafe
 
 ## [0.9.0] - 26-07-2024
 
