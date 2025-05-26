@@ -59,10 +59,6 @@ impl Cpus {
             .sorted()
             .dedup()
     }
-
-    pub fn get(&self, cpu: &str) -> Option<&CpuFeatures> {
-        self.features.get(cpu)
-    }
 }
 
 #[derive(Clone)]

@@ -104,11 +104,6 @@ impl MultiversMetadata {
         Ok(default)
     }
 
-    /// Parses the multivers metadata from a [`Package`].
-    pub fn from_package(package: &Package) -> anyhow::Result<Option<Self>> {
-        Self::from_value(&package.metadata)
-    }
-
     /// Interprets a [`Value`] as a [`MultiversMetadata`].
     pub fn from_value(value: &Value) -> anyhow::Result<Option<Self>> {
         if value.is_null() {
