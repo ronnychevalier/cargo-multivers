@@ -7,8 +7,8 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 
-use bzip2::read::BzEncoder;
 use bzip2::Compression;
+use bzip2::read::BzEncoder;
 
 use qbsdiff::Bsdiff;
 
@@ -88,7 +88,9 @@ impl BuildsDescription {
         let source_build = self.remove_source();
 
         if source_build.is_none() {
-            println!("cargo:warning=The JSON file loaded from the environment variable MULTIVERS_BUILDS_DESCRIPTION_PATH must contain builds.");
+            println!(
+                "cargo:warning=The JSON file loaded from the environment variable MULTIVERS_BUILDS_DESCRIPTION_PATH must contain builds."
+            );
             println!("cargo:warning=It will build, but it will fail at runtime.");
         }
 

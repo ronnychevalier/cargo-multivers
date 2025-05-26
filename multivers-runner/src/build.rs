@@ -98,8 +98,8 @@ cfg_if::cfg_if! {
 mod tests {
     use std::io::Read;
 
-    use bzip2::read::BzEncoder;
     use bzip2::Compression;
+    use bzip2::read::BzEncoder;
 
     use crate::Build;
 

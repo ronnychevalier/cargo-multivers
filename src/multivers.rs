@@ -17,7 +17,7 @@ use target_lexicon::{Environment, Triple};
 
 use indicatif::{ProgressBar, ProgressStyle};
 
-use console::{style, Term};
+use console::{Term, style};
 
 use sha3::{Digest, Sha3_256};
 

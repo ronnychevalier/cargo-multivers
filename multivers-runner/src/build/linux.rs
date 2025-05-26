@@ -7,7 +7,7 @@ use libc::fexecve;
 
 use rustix::fd::IntoRawFd as _;
 use rustix::fd::OwnedFd;
-use rustix::fs::{memfd_create, MemfdFlags};
+use rustix::fs::{MemfdFlags, memfd_create};
 
 use super::{Build, Executable};
 

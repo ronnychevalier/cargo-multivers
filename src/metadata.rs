@@ -150,7 +150,7 @@ impl MultiversMetadata {
 mod tests {
     use std::collections::HashMap;
 
-    use serde_json::{json, Value};
+    use serde_json::{Value, json};
 
     use target_lexicon::Architecture;
 

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use escargot::error::CargoError;
 use escargot::CommandMessages;
+use escargot::error::CargoError;
 
 pub trait CommandMessagesExt {
     /// Finds the executable artifact in the stream of messages from Cargo while printing rustc messages.
