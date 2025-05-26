@@ -175,7 +175,7 @@ additional terms or conditions.
 
 [Latest Version]: https://img.shields.io/crates/v/cargo-multivers.svg
 [crates.io]: https://crates.io/crates/cargo-multivers
-[rustc-image]: https://img.shields.io/badge/rustc-1.80+-blue.svg
+[rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [license-image]: https://img.shields.io/crates/l/cargo-multivers.svg
 [min-sized-rust]: https://github.com/johnthagen/min-sized-rust
 [target-cpu]: https://doc.rust-lang.org/rustc/codegen-options/index.html#target-cpu
