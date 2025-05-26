@@ -16,8 +16,8 @@ repository.workspace = true
 include = ["README.md", "CHANGELOG.md", "/src/*", "/LICENSE*"]
 
 [workspace.package]
-rust-version = "1.80"
-edition = "2021"
+rust-version = "1.85"
+edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/ronnychevalier/cargo-multivers"
 
