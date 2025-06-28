@@ -141,7 +141,7 @@ impl Multivers {
 
         if triple.environment == Environment::Msvc {
             rust_flags.push_str(" -C link-args=/Brepro");
-        };
+        }
 
         let profile_dir = if self.profile == "dev" {
             "debug"
