@@ -16,7 +16,7 @@ repository.workspace = true
 include = ["README.md", "CHANGELOG.md", "/src/*", "/LICENSE*"]
 
 [workspace.package]
-rust-version = "1.85"
+rust-version = "1.86"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/ronnychevalier/cargo-multivers"
@@ -25,11 +25,11 @@ repository = "https://github.com/ronnychevalier/cargo-multivers"
 anyhow = "1.0.70"
 escargot = "0.5.8"
 clap = { version = "4.4", features = ["derive", "cargo"] }
-clap-cargo = { version = "0.15", features = ["cargo_metadata"] }
-cargo_metadata = "0.19"
+clap-cargo = { version = "0.17", features = ["cargo_metadata"] }
+cargo_metadata = "0.22"
 target-lexicon = { version = "0.13", features = ["std"] }
-console = "0.15"
-indicatif = "0.17"
+console = "0.16"
+indicatif = "0.18"
 rayon = "1.8"
 serde = { version = "1.0.184", features = ["derive"] }
 sha3 = "0.10"

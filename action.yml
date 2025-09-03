@@ -35,20 +35,20 @@ runs:
   using: 'composite'
   steps:
     - name: Install cargo-multivers (git main)
-      uses: baptiste0928/cargo-install@v2
+      uses: baptiste0928/cargo-install@v3
       with:
         crate: cargo-multivers
         git: https://github.com/ronnychevalier/cargo-multivers
         branch: main
       if: "${{ inputs.version == 'main' }}"
     - name: Install cargo-multivers (version)
-      uses: baptiste0928/cargo-install@v2
+      uses: baptiste0928/cargo-install@v3
       with:
         crate: cargo-multivers
         version: ${{ inputs.version }}
       if: "${{ inputs.version != '' && inputs.version != 'main' }}"
     - name: Install cargo-multivers (latest)
-      uses: baptiste0928/cargo-install@v2
+      uses: baptiste0928/cargo-install@v3
       with:
         crate: cargo-multivers
       if: "${{ inputs.version == '' }}"

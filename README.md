@@ -115,7 +115,7 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Install Rust nightly
       uses: dtolnay/rust-toolchain@master
       with:
@@ -175,7 +175,7 @@ additional terms or conditions.
 
 [Latest Version]: https://img.shields.io/crates/v/cargo-multivers.svg
 [crates.io]: https://crates.io/crates/cargo-multivers
-[rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
+[rustc-image]: https://img.shields.io/badge/rustc-1.86+-blue.svg
 [license-image]: https://img.shields.io/crates/l/cargo-multivers.svg
 [min-sized-rust]: https://github.com/johnthagen/min-sized-rust
 [target-cpu]: https://doc.rust-lang.org/rustc/codegen-options/index.html#target-cpu

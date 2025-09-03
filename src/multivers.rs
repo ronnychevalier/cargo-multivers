@@ -326,7 +326,7 @@ impl Multivers {
                 let encoded =
                     serde_json::to_vec_pretty(&builds).context("Failed to encode the builds")?;
 
-                let package_output_directory = self.target_dir.join(&selected_package.name);
+                let package_output_directory = self.target_dir.join(selected_package.name.as_ref());
                 std::fs::create_dir_all(&package_output_directory)
                     .context("Failed to create temporary output directory")?;
                 let builds_path = package_output_directory.join("builds.json");

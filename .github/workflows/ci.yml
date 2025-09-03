@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: typos
       uses: crate-ci/typos@master
   test:
@@ -30,7 +30,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
@@ -40,13 +40,13 @@ jobs:
     - name: Default features
       run: cargo test --workspace
   msrv:
-    name: "Check MSRV: 1.85.0"
+    name: "Check MSRV: 1.86.0"
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@1.85.0
+      uses: dtolnay/rust-toolchain@1.86.0
     - uses: Swatinem/rust-cache@v2
     - name: Default features
       run: cargo check --all-targets
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -70,9 +70,9 @@ jobs:
       checks: write
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@1.85.0
+      uses: dtolnay/rust-toolchain@1.86.0
       with:
         components: clippy
     - uses: Swatinem/rust-cache@v2
@@ -87,7 +87,7 @@ jobs:
       checks: write
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
@@ -102,16 +102,16 @@ jobs:
     name: "cargo deny"
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: EmbarkStudios/cargo-deny-action@v1
       with:
-        rust-version: "1.85.0"
+        rust-version: "1.86.0"
   test-action:
     name: Test cargo-multivers action
     runs-on: windows-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Install Rust nightly
       uses: dtolnay/rust-toolchain@master
       with:
