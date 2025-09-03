@@ -84,11 +84,14 @@ fn print_cpu_features() {
 /// It should build without a runner since every build leads to the same binary.
 #[test]
 fn crate_that_does_nothing() {
-    build_and_run_crate("test-nothing", |_| ())
-        .0
-        .assert()
-        .success()
-        .stdout("");
+    build_and_run_crate("test-nothing", |_command| {
+        #[cfg(coverage)]
+        _command.env_remove("RUSTFLAGS");
+    })
+    .0
+    .assert()
+    .success()
+    .stdout("");
 }
 
 /// Checks that we can build a crate that prints its argv and that works as expected
@@ -165,7 +168,6 @@ fn crate_within_workspace() {
 ///
 /// Regression test (see #7).
 #[test]
-#[cfg_attr(coverage, ignore)]
 fn rebuild_std_env() {
     let expected_args = ["z", "foo2", "''"];
     build_and_run_crate("test-argv", |command| {
