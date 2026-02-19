@@ -107,21 +107,36 @@ impl BuildsDescription {
             .transpose()?
             .unwrap_or_default();
         let source_features = source_build.map(|s| s.features).unwrap_or_default();
+
+        let out_dir_env = std::env::var_os("OUT_DIR").ok_or_else(|| {
+            proc_exit::sysexits::SOFTWARE_ERR.with_message("Missing OUT_DIR environment variable")
+        })?;
+        let out_dir = Path::new(&out_dir_env);
+
         let patches = self
             .builds
             .into_iter()
-            .map(|build| {
+            .enumerate()
+            .map(|(i, build)| {
                 let target = std::fs::read(&build.path).map_err(|_| {
                     proc_exit::sysexits::IO_ERR
-                        .with_message(format!("Failed to read build {}", build.path.display(),))
+                        .with_message(format!("Failed to read build {}", build.path.display()))
                 })?;
                 let patch = bsdiff(&source, &target)?;
                 let features = build.features;
+
+                let patch_filename = format!("patch_{i}.bin");
+                let patch_path = out_dir.join(&patch_filename);
+                std::fs::write(&patch_path, &patch).map_err(|_| {
+                    proc_exit::sysexits::IO_ERR.with_message(format!(
+                        "Failed to write patch file {}",
+                        patch_path.display(),
+                    ))
+                })?;
+
                 Ok(quote! {
                     Build {
-                        compressed: &[
-                            #(#patch),*
-                        ],
+                        compressed: include_bytes!(concat!(env!("OUT_DIR"), "/", #patch_filename)),
                         features: &[
                             #(#features),*
                         ],
@@ -130,13 +145,22 @@ impl BuildsDescription {
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let source = compress(&source[..])?;
+
+        let source_compressed = compress(&source[..])?;
+
+        let source_filename = "source.bin";
+        let source_file = out_dir.join(source_filename);
+        std::fs::write(&source_file, &source_compressed).map_err(|_| {
+            proc_exit::sysexits::IO_ERR.with_message(format!(
+                "Failed to write compressed source file {}",
+                source_file.display(),
+            ))
+        })?;
+
         let n_builds = patches.len();
         let tokens = quote! {
             const SOURCE: Build<'_> = Build {
-                compressed: &[
-                    #(#source),*
-                ],
+                compressed: include_bytes!(concat!(env!("OUT_DIR"), "/", #source_filename)),
                 features: &[
                     #(#source_features),*
                 ],
