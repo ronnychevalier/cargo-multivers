@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Changed
+### Features
 
-- Update dependencies.
-- MSRV is now 1.86.
+- Add a `debug` feature to the runner
+- Add a `--runner-features` flag to `cargo multivers`
+
+### Build
+
+- Switch to MSRV 1.86 and edition 2024
 
 [Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.9.1...HEAD
 

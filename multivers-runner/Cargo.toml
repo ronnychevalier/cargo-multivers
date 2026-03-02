@@ -9,12 +9,17 @@ categories = ["hardware-support"]
 keywords = ["performance", "optimization", "cargo", "cpu", "multivers"]
 repository.workspace = true
 
+[features]
+debug = ["dep:env_logger", "dep:log"]
+
 [dependencies]
 cfg-if = "1"
 notstd_detect = "0.6.0"
 proc-exit = "2"
 qbsdiff = "1.4"
 bzip2 = { version = "0.6", features = ["static"] }
+log = { version = "0.4", optional = true }
+env_logger = { version = "0.11", optional = true }
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
 tempfile = "3.5"

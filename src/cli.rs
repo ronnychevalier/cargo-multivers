@@ -63,6 +63,10 @@ pub struct Args {
     #[clap(long, value_name = "PATH")]
     pub out_dir: Option<PathBuf>,
 
+    #[clap(long, value_delimiter = ' ')]
+    /// Space-separated list of features to activate for the runner (only "debug" is available at the moment)
+    pub runner_features: Vec<String>,
+
     #[command(flatten)]
     pub manifest: clap_cargo::Manifest,
 

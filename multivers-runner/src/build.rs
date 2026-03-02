@@ -50,8 +50,15 @@ impl Build<'_> {
         let supported_features: Vec<&str> = notstd_detect::detect::features()
             .filter_map(|(feature, supported)| supported.then_some(feature))
             .collect();
+        #[cfg(feature = "debug")]
+        log::debug!("Supported CPU features: {}", supported_features.join(", "));
 
         builds.into_iter().find_map(|build| {
+            #[cfg(feature = "debug")]
+            log::debug!(
+                "Checking build requiring CPU features: {}",
+                build.features.join(", ")
+            );
             build
                 .features
                 .iter()
@@ -63,6 +70,12 @@ impl Build<'_> {
     /// Finds a version that matches the CPU features of the host
     pub fn find() -> Option<Self> {
         Self::find_from(PATCHES)
+    }
+
+    /// List of CPU features required by the build
+    #[cfg(feature = "debug")]
+    pub fn features(&self) -> &[&str] {
+        self.features
     }
 }
 

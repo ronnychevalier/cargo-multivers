@@ -35,7 +35,16 @@ pub unsafe extern "C" fn main(argc: i32, argv: *const *const i8, envp: *const *c
 }
 
 unsafe fn run(argc: i32, argv: *const *const i8, envp: *const *const i8) -> proc_exit::ExitResult {
+    #[cfg(feature = "debug")]
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
+
     let build = Build::find().unwrap_or_default();
+
+    #[cfg(feature = "debug")]
+    log::debug!(
+        "Executing build with the following CPU features: {}",
+        build.features().join(", ")
+    );
 
     unsafe { build.exec(argc, argv, envp) }?;
 

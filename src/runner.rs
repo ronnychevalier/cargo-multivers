@@ -5,6 +5,8 @@ use anyhow::Context;
 
 use escargot::CargoBuild;
 
+use itertools::Itertools;
+
 use crate::cargo::CommandMessagesExt;
 
 pub struct RunnerBuilder {
@@ -17,6 +19,7 @@ impl RunnerBuilder {
     pub fn generate_crate_sources(
         output_directory: PathBuf,
         multivers_runner_version: &str,
+        features: Vec<String>,
     ) -> anyhow::Result<Self> {
         let root_directory = output_directory.join("package-runner");
         let src_directory = root_directory.join("src");
@@ -25,16 +28,22 @@ impl RunnerBuilder {
         let local_multivers_runner_dependency =
             Path::new(env!("CARGO_MANIFEST_DIR")).join("multivers-runner");
 
-        let dependency = if local_multivers_runner_dependency.exists() {
+        let features = features
+            .into_iter()
+            .map(|feature| format!("\"{feature}\""))
+            .join(", ");
+
+        let local_path = if local_multivers_runner_dependency.exists() {
             let local_multivers_runner_dependency = local_multivers_runner_dependency
                 .to_string_lossy()
                 .replace('\\', "/");
-            format!(
-                r#"multivers-runner = {{ version = "{multivers_runner_version}", path = "{local_multivers_runner_dependency}" }}"#,
-            )
+            format!(r#", path = "{local_multivers_runner_dependency}""#,)
         } else {
-            format!(r#"multivers-runner = "{multivers_runner_version}""#)
+            String::new()
         };
+        let dependency = format!(
+            r#"multivers-runner = {{ version = "{multivers_runner_version}", features = [{features}]{local_path} }}"#
+        );
 
         let manifest = format!(
             r#"[package]
