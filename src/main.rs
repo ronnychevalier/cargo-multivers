@@ -1,3 +1,6 @@
+#![feature(stdarch_internal)]
+#![allow(internal_features)]
+
 //! Cargo subcommand to build multiple versions of the same binary, each with a different CPU features set, merged into a single portable optimized binary.
 use std::io::Write;
 

@@ -62,6 +62,17 @@ impl Rustc {
             "x87",
         ];
 
+        // Features that are going to be checked for at runtime by multivers-runner.
+        //
+        // Only these features are allowed to be used as rustflags
+        // because rustc can print more target features than nostd_detect checks for,
+        // which results in the final binary always choosing the most generic version.
+        //
+        // See https://github.com/ronnychevalier/cargo-multivers/issues/20
+        let allowed_features = notstd_detect::detect::features()
+            .map(|(feature_name, _)| feature_name)
+            .collect::<BTreeSet<_>>();
+
         let cfg = Self::command()
             .args([
                 "--print=cfg",
@@ -89,7 +100,10 @@ impl Rustc {
 
                 line.strip_suffix('"').map(ToOwned::to_owned)
             })
-            .filter(|feature| !ignored_features.contains(&feature.as_str()))
+            .filter(|feature| {
+                !ignored_features.contains(&feature.as_str())
+                    && allowed_features.contains(&feature.as_str())
+            })
             .collect();
 
         Ok(features)
