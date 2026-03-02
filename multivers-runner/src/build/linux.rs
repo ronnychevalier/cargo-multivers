@@ -27,11 +27,11 @@ impl Executable for Build<'_> {
             .map(OwnedFd::into_raw_fd)
             .map(|fd| unsafe { File::from_raw_fd(fd) })
             .map_err(|_| {
-                proc_exit::Code::FAILURE.with_message("Failed to create an anomymous memory file")
+                proc_exit::Code::FAILURE.with_message("Failed to create an anonymous memory file")
             })?;
         self.extract_into(&mut file).map_err(|_| {
             proc_exit::Code::FAILURE
-                .with_message("Failed to write the build to an anomymous memory file")
+                .with_message("Failed to write the build to an anonymous memory file")
         })?;
 
         let r = unsafe { fexecve(file.into_raw_fd(), argv, envp) };
