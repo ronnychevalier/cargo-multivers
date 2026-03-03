@@ -169,6 +169,7 @@ dependencies = [
  "escargot",
  "indicatif",
  "itertools",
+ "notstd_detect",
  "predicates",
  "rayon",
  "serde",

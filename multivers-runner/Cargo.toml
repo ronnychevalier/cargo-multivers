@@ -14,7 +14,7 @@ debug = ["dep:env_logger", "dep:log"]
 
 [dependencies]
 cfg-if = "1"
-notstd_detect = "0.6.0"
+notstd_detect = "0.6.0" # should be the same version as notstd_detect in cargo-multivers
 proc-exit = "2"
 qbsdiff = "1.4"
 bzip2 = { version = "0.6", features = ["static"] }
