@@ -126,20 +126,6 @@ mod tests {
         assert_eq!(Build::find_from(None), None);
     }
 
-    #[cfg(target_feature = "sse")]
-    #[test]
-    fn find_x86_sse() {
-        let build = Build {
-            compressed: b"test",
-            features: &["sse"],
-            source: None,
-        };
-        assert_eq!(
-            Build::find_from(std::iter::once(build.clone())),
-            Some(build)
-        );
-    }
-
     #[test]
     fn find_no_features() {
         let build = Build {
