@@ -12,7 +12,7 @@ use bzip2::read::BzEncoder;
 
 use qbsdiff::Bsdiff;
 
-use quote::quote;
+use quote::{format_ident, quote};
 
 use serde::Deserialize;
 
@@ -107,11 +107,19 @@ impl BuildsDescription {
             .transpose()?
             .unwrap_or_default();
         let source_features = source_build.map(|s| s.features).unwrap_or_default();
+        let source_features_string = source_features.join(", ");
 
         let out_dir_env = std::env::var_os("OUT_DIR").ok_or_else(|| {
             proc_exit::sysexits::SOFTWARE_ERR.with_message("Missing OUT_DIR environment variable")
         })?;
         let out_dir = Path::new(&out_dir_env);
+
+        let cargo_arch = std::env::var("CARGO_CFG_TARGET_ARCH").map_err(|_| {
+            proc_exit::sysexits::CONFIG_ERR
+                .with_message("Failed to get target's architecture from cargo")
+        })?;
+        let arch = cargo_arch.trim_end_matches("_64");
+        let is_feature_detected = format_ident!("is_{arch}_feature_detected");
 
         let patches = self
             .builds
@@ -124,6 +132,7 @@ impl BuildsDescription {
                 })?;
                 let patch = bsdiff(&source, &target)?;
                 let features = build.features;
+                let features_string = features.join(", ");
 
                 let patch_filename = format!("patch_{i}.bin");
                 let patch_path = out_dir.join(&patch_filename);
@@ -137,9 +146,9 @@ impl BuildsDescription {
                 Ok(quote! {
                     Build {
                         compressed: include_bytes!(concat!(env!("OUT_DIR"), "/", #patch_filename)),
-                        features: &[
-                            #(#features),*
-                        ],
+                        all_features_supported: || true #(&& #is_feature_detected!(#features))*,
+                        #[cfg(any(test, feature = "debug"))]
+                        features: #features_string,
                         source: Some(&SOURCE),
                     }
                 })
@@ -161,9 +170,9 @@ impl BuildsDescription {
         let tokens = quote! {
             const SOURCE: Build<'_> = Build {
                 compressed: include_bytes!(concat!(env!("OUT_DIR"), "/", #source_filename)),
-                features: &[
-                    #(#source_features),*
-                ],
+                all_features_supported: || true #(&& #is_feature_detected!(#source_features))*,
+                #[cfg(any(test, feature = "debug"))]
+                features: #source_features_string,
                 source: None,
             };
             const PATCHES: [Build<'_>; #n_builds] = [

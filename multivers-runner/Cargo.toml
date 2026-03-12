@@ -14,7 +14,6 @@ debug = ["dep:env_logger", "dep:log"]
 
 [dependencies]
 cfg-if = "1"
-notstd_detect = "0.6.0"
 proc-exit = "2"
 qbsdiff = "1.4"
 bzip2 = { version = "0.6", features = ["static"] }
