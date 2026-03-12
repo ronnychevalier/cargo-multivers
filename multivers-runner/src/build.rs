@@ -47,11 +47,16 @@ impl Build<'_> {
 
     /// Finds a version that matches the CPU features of the host
     pub fn find_from(builds: impl IntoIterator<Item = Self>) -> Option<Self> {
-        let supported_features: Vec<&str> = notstd_detect::detect::features()
-            .filter_map(|(feature, supported)| supported.then_some(feature))
-            .collect();
+        let supported_features = &*SUPPORTED_FEATURES;
         #[cfg(feature = "debug")]
-        log::debug!("Supported CPU features: {}", supported_features.join(", "));
+        log::debug!(
+            "Supported CPU features: {}",
+            supported_features
+                .iter()
+                .copied()
+                .collect::<Vec<&str>>()
+                .join(", ")
+        );
 
         builds.into_iter().find_map(|build| {
             #[cfg(feature = "debug")]

@@ -3,6 +3,8 @@
 //! It reads a JSON file that contains a set of paths to executables and their dependency on CPU features
 //! from the environment variable `MULTIVERS_BUILDS_DESCRIPTION_PATH`.
 //! Then, it generates a Rust file that contains the source and the patches.
+
+use std::collections::BTreeSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
@@ -12,7 +14,7 @@ use bzip2::read::BzEncoder;
 
 use qbsdiff::Bsdiff;
 
-use quote::quote;
+use quote::{format_ident, quote};
 
 use serde::Deserialize;
 
@@ -85,6 +87,16 @@ impl BuildsDescription {
     }
 
     pub fn generate_sources(mut self, dest_path: &Path) -> Result<(), Exit> {
+        // This must be collected before any builds are removed via remove_source(),
+        // otherwise some features could be missed.
+        // (the source build can have features which no other build has!)
+        let features_superset: BTreeSet<String> = self
+            .builds
+            .iter()
+            .flat_map(|build_description| build_description.features.iter())
+            .cloned()
+            .collect();
+
         let source_build = self.remove_source();
 
         if source_build.is_none() {
@@ -158,6 +170,12 @@ impl BuildsDescription {
         })?;
 
         let n_builds = patches.len();
+        let cargo_arch = std::env::var("CARGO_CFG_TARGET_ARCH").map_err(|_| {
+            proc_exit::sysexits::CONFIG_ERR
+                .with_message("Failed to get target's architecture from cargo")
+        })?;
+        let arch = cargo_arch.trim_end_matches("_64");
+        let is_feature_detected = format_ident!("is_{arch}_feature_detected");
         let tokens = quote! {
             const SOURCE: Build<'_> = Build {
                 compressed: include_bytes!(concat!(env!("OUT_DIR"), "/", #source_filename)),
@@ -169,6 +187,17 @@ impl BuildsDescription {
             const PATCHES: [Build<'_>; #n_builds] = [
                 #(#patches),*
             ];
+            #[allow(clippy::let_and_return, unused_mut)]
+            static SUPPORTED_FEATURES: std::sync::LazyLock<std::collections::BTreeSet<&'static str>> =
+                std::sync::LazyLock::new(|| {
+                    let mut supported_features = std::collections::BTreeSet::new();
+                    #(
+                        if std::arch::#is_feature_detected!(#features_superset) {
+                            supported_features.insert(#features_superset);
+                        }
+                    )*
+                    supported_features
+                });
         };
 
         std::fs::write(dest_path, tokens.to_string()).map_err(|_| {
