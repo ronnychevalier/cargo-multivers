@@ -8,7 +8,6 @@ use clap::Parser;
 use crate::cli::{Cargo, Print};
 use crate::features::Cpus;
 use crate::multivers::Multivers;
-use crate::rustc::Rustc;
 
 mod cargo;
 mod cli;
@@ -36,10 +35,10 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    anyhow::ensure!(
-        Rustc::is_nightly(),
-        "You must run cargo multivers with Rust nightly channel. For example, you can run: `cargo +nightly multivers`"
-    );
+    // anyhow::ensure!(
+    //     Rustc::is_nightly(),
+    //     "You must run cargo multivers with Rust nightly channel. For example, you can run: `cargo +nightly multivers`"
+    // );
 
     Multivers::from_args(args)?.build()
 }

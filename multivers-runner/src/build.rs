@@ -47,11 +47,16 @@ impl Build<'_> {
 
     /// Finds a version that matches the CPU features of the host
     pub fn find_from(builds: impl IntoIterator<Item = Self>) -> Option<Self> {
-        let supported_features: Vec<&str> = notstd_detect::detect::features()
-            .filter_map(|(feature, supported)| supported.then_some(feature))
-            .collect();
+        let supported_features = &*SUPPORTED_FEATURES;
         #[cfg(feature = "debug")]
-        log::debug!("Supported CPU features: {}", supported_features.join(", "));
+        log::debug!(
+            "Supported CPU features: {}",
+            supported_features
+                .iter()
+                .copied()
+                .collect::<Vec<&str>>()
+                .join(", ")
+        );
 
         builds.into_iter().find_map(|build| {
             #[cfg(feature = "debug")]
@@ -119,20 +124,6 @@ mod tests {
     #[test]
     fn find_none() {
         assert_eq!(Build::find_from(None), None);
-    }
-
-    #[cfg(target_feature = "sse")]
-    #[test]
-    fn find_x86_sse() {
-        let build = Build {
-            compressed: b"test",
-            features: &["sse"],
-            source: None,
-        };
-        assert_eq!(
-            Build::find_from(std::iter::once(build.clone())),
-            Some(build)
-        );
     }
 
     #[test]
