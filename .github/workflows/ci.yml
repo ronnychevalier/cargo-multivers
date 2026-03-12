@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest", "windows-latest"]
-        rust: ["nightly"]
+        rust: ["stable"]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
@@ -91,7 +91,7 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: nightly
+        toolchain: stable
         components: clippy
     - uses: Swatinem/rust-cache@v2
     - uses: actions-rs/clippy-check@v1
@@ -112,10 +112,10 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v5
-    - name: Install Rust nightly
+    - name: Install Rust stable
       uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: nightly
+        toolchain: stable
     - uses: ./
       with:
         manifest_path: tests/test-argv/Cargo.toml
