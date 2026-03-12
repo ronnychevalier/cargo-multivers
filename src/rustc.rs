@@ -27,22 +27,6 @@ impl Rustc {
         Command::new(RUSTC.as_path())
     }
 
-    /// Returns true if rustc is on the nightly release channel
-    pub fn is_nightly() -> bool {
-        let Ok(rustc_v) = Self::command().arg("-vV").output() else {
-            return false;
-        };
-
-        let release = rustc_v
-            .stdout
-            .lines()
-            .map_while(Result::ok)
-            .find_map(|line| line.strip_prefix("release: ").map(ToOwned::to_owned))
-            .unwrap_or_default();
-
-        release.contains("nightly")
-    }
-
     /// Returns the default target that rustc uses to build if none is provided (the host)
     pub fn default_target() -> anyhow::Result<String> {
         let rustc_v = Self::command().arg("-vV").output()?;
