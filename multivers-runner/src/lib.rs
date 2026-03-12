@@ -1,6 +1,4 @@
 #![doc = "README.md"]
-#![feature(stdarch_internal)]
-#![allow(internal_features)]
 #![cfg_attr(not(test), no_main)]
 #![cfg_attr(test, allow(dead_code))]
 

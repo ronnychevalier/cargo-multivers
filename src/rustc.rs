@@ -28,6 +28,11 @@ impl Rustc {
     }
 
     /// Returns true if rustc is on the nightly release channel
+    #[expect(
+        dead_code,
+        reason = "This project doesn't need nightly anymore, so this check is no longer needed. \
+        The code is not removed in case nightly is needed again in the future."
+    )]
     pub fn is_nightly() -> bool {
         let Ok(rustc_v) = Self::command().arg("-vV").output() else {
             return false;
