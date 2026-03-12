@@ -8,15 +8,36 @@ use qbsdiff::Bspatch;
 include!(concat!(env!("OUT_DIR"), "/builds.rs"));
 
 /// Stores a build and the CPU features it requires
-#[cfg_attr(test, derive(PartialEq, Eq, Debug, Clone))]
+#[cfg_attr(test, derive(Eq, Debug, Clone))]
 pub struct Build<'a> {
     compressed: &'a [u8],
 
-    /// A list of CPU features (e.g., `["avx" , "cmpxchg16b" , "fxsr" , "pclmulqdq" , "popcnt" , "sse" , "sse2" , "sse3" , "sse4.1" , "sse4.2" , "ssse3" , "xsave" , "xsaveopt"]`)
-    features: &'a [&'a str],
+    /// A function pointer that, when called, returns true if the running CPU supports all build's features
+    all_features_supported: fn() -> bool,
+
+    #[cfg(any(test, feature = "debug"))]
+    /// A comma-separated list of CPU features (e.g., `"avx, cmpxchg16b, fxsr, pclmulqdq, popcnt, sse, sse2, sse3, sse4.1, sse4.2, ssse3, xsave, xsaveopt"`)
+    features: &'a str,
 
     /// The source of this build (`None` if it is not a patch, but a source and it only needs to be uncompressed)
     source: Option<&'a Self>,
+}
+
+#[cfg(test)]
+impl PartialEq for Build<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        #[inline]
+        fn make_eq_key(build: &Build<'_>) -> impl Eq {
+            (
+                build.compressed,
+                #[cfg(any(test, feature = "debug"))]
+                build.features,
+                build.source,
+            )
+        }
+
+        make_eq_key(self) == make_eq_key(other)
+    }
 }
 
 impl Default for Build<'_> {
@@ -47,23 +68,11 @@ impl Build<'_> {
 
     /// Finds a version that matches the CPU features of the host
     pub fn find_from(builds: impl IntoIterator<Item = Self>) -> Option<Self> {
-        let supported_features: Vec<&str> = notstd_detect::detect::features()
-            .filter_map(|(feature, supported)| supported.then_some(feature))
-            .collect();
-        #[cfg(feature = "debug")]
-        log::debug!("Supported CPU features: {}", supported_features.join(", "));
-
-        builds.into_iter().find_map(|build| {
+        builds.into_iter().find(|build| {
             #[cfg(feature = "debug")]
-            log::debug!(
-                "Checking build requiring CPU features: {}",
-                build.features.join(", ")
-            );
-            build
-                .features
-                .iter()
-                .all(|feature| supported_features.contains(feature))
-                .then_some(build)
+            log::debug!("Checking build requiring CPU features: {}", build.features);
+
+            (build.all_features_supported)()
         })
     }
 
@@ -74,7 +83,7 @@ impl Build<'_> {
 
     /// List of CPU features required by the build
     #[cfg(feature = "debug")]
-    pub fn features(&self) -> &[&str] {
+    pub fn features(&self) -> &str {
         self.features
     }
 }
@@ -139,7 +148,8 @@ mod tests {
     fn find_no_features() {
         let build = Build {
             compressed: b"test",
-            features: &[],
+            all_features_supported: || true,
+            features: "",
             source: None,
         };
         assert_eq!(
@@ -152,7 +162,8 @@ mod tests {
     fn find_feature_not_found() {
         let build = Build {
             compressed: b"test",
-            features: &["unknown feature"],
+            all_features_supported: || false,
+            features: "unknown feature",
             source: None,
         };
         assert_eq!(Build::find_from(std::iter::once(build.clone())), None);
@@ -162,7 +173,8 @@ mod tests {
     fn extract_into_fail_not_compressed() {
         let build = Build {
             compressed: b"test",
-            features: &[],
+            all_features_supported: || true,
+            features: "",
             source: None,
         };
         let mut v = vec![];
@@ -178,7 +190,8 @@ mod tests {
 
         let build = Build {
             compressed: &compressed,
-            features: &[],
+            all_features_supported: || true,
+            features: "",
             source: None,
         };
         let mut decompressed_data = vec![];
