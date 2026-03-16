@@ -53,8 +53,15 @@ cargo install --locked cargo-multivers
 ## Usage
 
 ```bash
-cargo +nightly multivers
+cargo multivers
 ```
+
+When using the nightly toolchain (e.g. `cargo +nightly multivers`) you might run into compilation errors complaining that a feature is unknown
+(e.g. `error: unknown x86 target feature: lahfsahf`).
+This is caused by nightly `rustc` supporting more features than `std::arch::is_{arch}_feature_detected!` macros do.
+
+This can be solved by running `multivers` with `--exclude-cpu-features`, passing all the problematic features to the flag.
+_(the problematic features can't be hard-coded because, over time, `std::arch` macros catch up, and more features get added to `rustc`)_
 
 ## Supported Operating Systems
 
@@ -99,8 +106,7 @@ lto = "thin"
 
 If you want to publish an optimized portable binary built by `cargo-multivers` when releasing a new version of your project,
 you can use the `cargo-multivers` GitHub Action.
-To do that you need to have a Rust nightly toolchain
-and add a step to your job:
+To do that you need to add a step to your job:
 
 ```yaml
     - uses: ronnychevalier/cargo-multivers@main
@@ -116,10 +122,10 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v5
-    - name: Install Rust nightly
+    - name: Install Rust stable
       uses: dtolnay/rust-toolchain@master
       with:
-        toolchain: nightly
+        toolchain: stable
     - uses: ronnychevalier/cargo-multivers@main
       with:
         manifest_path: path/to-your/Cargo.toml
