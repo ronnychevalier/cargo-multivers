@@ -9,8 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Features
 
-- Add a `debug` feature to the runner
+- Rust stable is now supported!
+- Add a `debug` feature to `multivers-runner`
 - Add a `--runner-features` flag to `cargo multivers`
+
+### Bug Fixes
+
+- Fix the broken CPU feature detection by replacing `notstd_detect` (it was no longer catching up with upstream) with calls to
+  the `std::arch::is_*_feature_detected` macros (See #20 and #22)
+- Support large binaries by using `include_bytes` for patches and source when generating Rust code for `multivers-runner` (See #19)
 
 ### Build
 
