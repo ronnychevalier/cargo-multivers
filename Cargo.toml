@@ -25,8 +25,8 @@ repository = "https://github.com/ronnychevalier/cargo-multivers"
 anyhow = "1.0.70"
 escargot = "0.5.8"
 clap = { version = "4.4", features = ["derive", "cargo"] }
-clap-cargo = { version = "0.17", features = ["cargo_metadata"] }
-cargo_metadata = "0.22"
+clap-cargo = { version = "0.18", features = ["cargo_metadata"] }
+cargo_metadata = "0.23"
 target-lexicon = { version = "0.13", features = ["std"] }
 console = "0.16"
 indicatif = "0.18"
