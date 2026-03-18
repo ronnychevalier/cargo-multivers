@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Build
 
-- Switch to MSRV 1.86 and edition 2024
+- Switch to MSRV 1.88 and edition 2024
 
 ## [0.9.1] - 2025-02-19
 
