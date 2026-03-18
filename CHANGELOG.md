@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.10.0...HEAD
+
+## [0.10.0] - 2026-03-18
+
 ### Features
 
 - Rust stable is now supported!
@@ -22,8 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Build
 
 - Switch to MSRV 1.86 and edition 2024
-
-[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.9.1...HEAD
 
 ## [0.9.1] - 2025-02-19
 
