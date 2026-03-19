@@ -212,3 +212,47 @@ fn no_bin() {
         "Error: No binary package detected. Only binaries can be built using cargo multivers.\n",
     ));
 }
+
+/// Checks that the produced binary uses the most optimized build possible.
+///
+/// Specifically, checks that `feature is supported -> feature is used at runtime`
+/// holds (when `native` is among compiled-for CPUs).
+///
+/// Regression test (see #20).
+#[test]
+#[cfg(target_arch = "x86_64")]
+fn correct_build_used() {
+    macro_rules! runtime_features_string {
+        ($($target_feature_name: tt)*) => {
+            [
+                $(
+                    {
+                        if is_x86_feature_detected!($target_feature_name) {
+                            Some($target_feature_name)
+                        } else {
+                            None
+                        }
+                    }
+                ),*
+            ]
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>()
+            .join(",")
+        };
+    }
+    let runtime_features = runtime_features_string!(
+        "adx" "aes" "avx" "avx2" "bmi1" "bmi2" "cmpxchg16b" "f16c" "fma"
+        "fxsr" "lzcnt" "movbe" "pclmulqdq" "popcnt" "rdrand" "rdseed" "sha"
+        "sse" "sse2" "sse3" "sse4.1" "sse4.2" "ssse3"
+        "xsave" "xsavec" "xsaveopt" "xsaves"
+    );
+
+    build_and_run_crate("test-correct-build-used", |build_command| {
+        build_command.args(["--cpus", "x86-64,x86-64-v2,x86-64-v3,x86-64-v4,native"]);
+    })
+    .0
+    .assert()
+    .success()
+    .stdout(predicate::eq(runtime_features));
+}
