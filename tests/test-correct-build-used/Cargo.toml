@@ -1,0 +1,9 @@
+[package]
+name = "test-correct-build-used"
+edition = "2024"
+publish = false
+
+[dependencies]
+
+[profile.release]
+strip = "symbols"
