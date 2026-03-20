@@ -143,9 +143,9 @@ jobs:
 You can set two types of inputs.
 The ones that are related to how `cargo-multivers` is installed:
 
-| Name           | Description                                     | Required | Default                                            |
-|----------------|-------------------------------------------------|----------|----------------------------------------------------|
-| version        | Version of cargo-multivers to use (e.g., 0.7.0) | false    | Latest published version on [crates.io][crates.io] |
+| Name           | Description                                      | Required | Default                                            |
+|----------------|--------------------------------------------------|----------|----------------------------------------------------|
+| version        | Version of cargo-multivers to use (e.g., 0.10.0) | false    | Latest published version on [crates.io][crates.io] |
 
 And the ones that are related to the arguments given to `cargo multivers` (e.g., `target` configures the `--target` option):
 

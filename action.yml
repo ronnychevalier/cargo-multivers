@@ -6,7 +6,7 @@ branding:
 
 inputs:
   version:
-    description: "Version of cargo-multivers to use (e.g., 0.7.0)"
+    description: "Version of cargo-multivers to use (e.g., 0.10.0)"
     required: false
   manifest_path:
     description: "Path to Cargo.toml"
