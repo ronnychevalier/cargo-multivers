@@ -47,7 +47,7 @@ lto = true
 strip = "symbols"
 
 [workspace]
-resolver = "2"
+resolver = "3"
 members = ["multivers-runner"]
 exclude = [
     "tests/test-argv",
