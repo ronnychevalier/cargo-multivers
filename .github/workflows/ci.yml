@@ -12,6 +12,8 @@ on:
     - '**'
     - '!/*.md'
     - "!/LICENSE-*"
+permissions:
+  contents: read
 jobs:
   typos:
     name: Spell Check with Typos
