@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Switch to MSRV 1.88 and edition 2024
 
+[0.10.0]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.9.1...v0.10.0
+
 ## [0.9.1] - 2025-02-19
 
 ### Bug Fixes
@@ -41,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Replace build script with `unexpected_cfgs` lint
 - Mark `no_mangle` attributes as unsafe
+
+[0.9.1]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.9.0...v0.9.1
 
 ## [0.9.0] - 26-07-2024
 
