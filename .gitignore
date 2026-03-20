@@ -1,3 +1,4 @@
 /target
 tests/*/target
+tests/cli/*/*/target
 multivers-runner/target

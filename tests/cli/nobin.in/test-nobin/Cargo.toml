@@ -1,6 +1,6 @@
 [package]
 name = "test-nobin"
-edition = "2021"
+edition = "2024"
 publish = false
 
 [dependencies]

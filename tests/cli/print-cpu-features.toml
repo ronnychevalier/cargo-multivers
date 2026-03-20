@@ -1,0 +1,14 @@
+bin.name = "cargo-multivers"
+args = "multivers --print cpu-features --cpus x86-64,x86-64-v2"
+stdout = """
+cmpxchg16b
+fxsr
+popcnt
+sse
+sse2
+sse3
+sse4.1
+sse4.2
+ssse3
+"""
+stderr = ""

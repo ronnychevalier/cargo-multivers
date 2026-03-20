@@ -65,20 +65,6 @@ fn build_and_run_crate(
     (Command::new(multivers_runner), out_dir)
 }
 
-#[test]
-fn print_cpu_features() {
-    let mut cargo_multivers = cargo_multivers();
-    cargo_multivers.arg("--print=cpu-features");
-    cargo_multivers.arg("--target=x86_64-unknown-linux-gnu");
-    let assert = cargo_multivers.assert().success();
-    let output = &assert.get_output().stdout;
-    assert!(!output.is_empty());
-
-    let output = String::from_utf8_lossy(output);
-    assert!(output.contains("avx2"));
-    assert!(output.contains("xsave"));
-}
-
 /// Checks that we can build a crate that does nothing and that it can run successfully.
 ///
 /// It should build without a runner since every build leads to the same binary.
@@ -198,19 +184,6 @@ fn profile_dev() {
         "{}\n",
         expected_args.join(" ")
     )));
-}
-
-/// Checks that users receive a message explaining that library only crates are not supported
-///
-/// See #12
-#[test]
-fn no_bin() {
-    build_crate("test-nobin", |_| ())
-        .0
-        .failure()
-        .stderr(predicate::eq(
-        "Error: No binary package detected. Only binaries can be built using cargo multivers.\n",
-    ));
 }
 
 /// Checks that the produced binary uses the most optimized build possible.

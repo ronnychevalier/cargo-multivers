@@ -1,0 +1,80 @@
+bin.name = "cargo-multivers"
+args = "multivers --help"
+stdout = """
+Cargo subcommand to build multiple versions of the same binary, each with a different CPU features set, merged into a single portable optimized binary
+
+Usage: cargo multivers [OPTIONS] [-- <ARGS>...]
+
+Arguments:
+  [ARGS]...
+          Arguments given to cargo build
+
+Options:
+      --target <TRIPLE>
+          Build for the target triple
+
+      --print <INFORMATION>
+          Print information on stdout
+
+          Possible values:
+          - cpu-features: Prints the list of CPU features supported by the target
+
+      --cpus <CPUs>
+          Comma-separated list of CPUs to use as a target
+
+      --exclude-cpu-features <CPU-FEATURES>
+          Comma-separated list of CPU features to exclude from the builds
+
+      --runner-version <VERSION>
+          Specify the version of the runner to use
+          
+          [default: 0.2]
+
+      --profile <PROFILE-NAME>
+          Build artifacts with the specified profile
+          
+          [default: release]
+
+      --color <WHEN>
+          Color preferences for program output
+          
+          [default: auto]
+          [possible values: auto, always, never]
+
+      --out-dir <PATH>
+          Copy final artifacts to this directory
+
+      --runner-features <RUNNER_FEATURES>
+          Space-separated list of features to activate for the runner (only "debug" is available at the moment)
+
+      --manifest-path <PATH>
+          Path to Cargo.toml
+
+  -p, --package <SPEC>
+          Package to process (see `cargo help pkgid`)
+
+      --workspace
+          Process all packages in the workspace
+
+      --exclude <SPEC>
+          Exclude packages from being processed
+
+      --all-features
+          Activate all available features
+
+      --no-default-features
+          Do not activate the `default` feature
+
+  -F, --features <FEATURES>
+          Space-separated list of features to activate
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+"""
+stderr = ""
+
+[env.add]
+COLUMNS = "100"

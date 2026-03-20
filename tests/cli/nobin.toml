@@ -1,0 +1,11 @@
+# Checks that users receive a message explaining that library only crates are not supported
+#
+# See #12
+bin.name = "cargo-multivers"
+args = "multivers --manifest-path test-nobin/Cargo.toml"
+stdout = ""
+stderr = """
+Error: No binary package detected. Only binaries can be built using cargo multivers.
+"""
+status.code = 1
+fs.sandbox = true

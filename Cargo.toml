@@ -40,6 +40,7 @@ itertools = "0.14"
 assert_cmd = "2"
 predicates = "3"
 tempfile = "3.8.1"
+trycmd = "1"
 
 [profile.release]
 lto = true
@@ -52,7 +53,7 @@ exclude = [
     "tests/test-argv",
     "tests/test-nothing",
     "tests/test-workspace",
-    "tests/test-nobin",
+    "tests/cli/nobin.in/test-nobin",
     "tests/test-correct-build-used",
 ]
 
