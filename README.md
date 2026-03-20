@@ -121,7 +121,7 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
     - name: Install Rust stable
       uses: dtolnay/rust-toolchain@master
       with:
@@ -130,8 +130,8 @@ jobs:
       with:
         manifest_path: path/to-your/Cargo.toml
     - name: Upload release archive
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      if: github.ref_type == 'tag'
       with:
         files: the-name-of-your-binary.exe
 
