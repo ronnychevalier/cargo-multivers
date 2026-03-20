@@ -76,10 +76,10 @@ But only x86_64 is tested.
 
 To limit build time, `cargo multivers` defines by default for some architectures a limited number of CPUs to build with.
 
-|Architecture|CPUs       |
-|------------|-----------|
-|`x86_64`    | [`x86-64,x86-64-v2,x86-64-v3,x86-64-v4`][microarchitecture-levels] |
-|`*`         | All |
+| Architecture | CPUs                                                               |
+|--------------|--------------------------------------------------------------------|
+|`x86_64`      | [`x86-64,x86-64-v2,x86-64-v3,x86-64-v4`][microarchitecture-levels] |
+|`*`           | All                                                                |
 
 You can override this with either the `--cpus` option on the command line,
 or by defining a key in your `Cargo.toml`:
