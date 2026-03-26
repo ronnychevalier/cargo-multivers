@@ -7,8 +7,6 @@ use std::fs::File;
 use std::io::{BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 
-use qbsdiff::Bsdiff;
-
 use quote::{format_ident, quote};
 
 use serde::Deserialize;
@@ -198,11 +196,8 @@ fn compress(mut reader: impl Read) -> Result<Vec<u8>, Exit> {
 }
 
 fn bsdiff(source: &[u8], target: &[u8]) -> Result<Vec<u8>, Exit> {
-    let mut patch = Vec::new();
-    Bsdiff::new(source, target)
-        .compare(std::io::Cursor::new(&mut patch))
-        .map_err(|_| proc_exit::sysexits::IO_ERR.with_message("Failed to generate a patch"))?;
-    Ok(patch)
+    gdelta::encode(target, source)
+        .map_err(|_| proc_exit::sysexits::IO_ERR.with_message("Failed to generate a patch"))
 }
 
 fn main() -> Result<(), Exit> {

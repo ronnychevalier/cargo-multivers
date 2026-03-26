@@ -1,8 +1,6 @@
 use std::convert::Infallible;
 use std::io::{Read, Write};
 
-use qbsdiff::Bspatch;
-
 include!(concat!(env!("OUT_DIR"), "/builds.rs"));
 
 /// Stores a build and the CPU features it requires
@@ -49,12 +47,13 @@ impl Build<'_> {
     pub fn extract_into(&self, mut output: impl Write) -> std::io::Result<()> {
         if let Some(source) = self.source {
             let mut decoder = lz4_flex::frame::FrameDecoder::new(source.compressed);
-            let patcher = Bspatch::new(self.compressed)?;
 
             let mut source = Vec::with_capacity(source.compressed.len());
             decoder.read_to_end(&mut source)?;
 
-            patcher.apply(&source, output)?;
+            let result =
+                gdelta::decode(self.compressed, &source).map_err(|_| std::io::Error::other(""))?;
+            output.write_all(&result)?;
         } else {
             let mut decoder = lz4_flex::frame::FrameDecoder::new(self.compressed);
 
@@ -116,8 +115,9 @@ cfg_if::cfg_if! {
 
 #[cfg(test)]
 mod tests {
-    use crate::Build;
     use std::io::Write;
+
+    use crate::Build;
 
     #[test]
     fn find_none() {
