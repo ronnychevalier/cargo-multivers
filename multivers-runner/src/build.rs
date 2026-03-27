@@ -1,8 +1,6 @@
 use std::convert::Infallible;
 use std::io::{Read, Write};
 
-use bzip2::read::BzDecoder;
-
 use qbsdiff::Bspatch;
 
 include!(concat!(env!("OUT_DIR"), "/builds.rs"));
@@ -50,7 +48,7 @@ impl Build<'_> {
     /// Extracts the build into a writer
     pub fn extract_into(&self, mut output: impl Write) -> std::io::Result<()> {
         if let Some(source) = self.source {
-            let mut decoder = BzDecoder::new(source.compressed);
+            let mut decoder = lz4_flex::frame::FrameDecoder::new(source.compressed);
             let patcher = Bspatch::new(self.compressed)?;
 
             let mut source = Vec::with_capacity(source.compressed.len());
@@ -58,7 +56,7 @@ impl Build<'_> {
 
             patcher.apply(&source, output)?;
         } else {
-            let mut decoder = BzDecoder::new(self.compressed);
+            let mut decoder = lz4_flex::frame::FrameDecoder::new(self.compressed);
 
             std::io::copy(&mut decoder, &mut output)?;
         }
@@ -118,12 +116,8 @@ cfg_if::cfg_if! {
 
 #[cfg(test)]
 mod tests {
-    use std::io::Read;
-
-    use bzip2::Compression;
-    use bzip2::read::BzEncoder;
-
     use crate::Build;
+    use std::io::Write;
 
     #[test]
     fn find_none() {
@@ -158,7 +152,7 @@ mod tests {
     #[test]
     fn extract_into_fail_not_compressed() {
         let build = Build {
-            compressed: b"test",
+            compressed: b"invalid compressed data",
             all_features_supported: || true,
             features: "",
             source: None,
@@ -170,9 +164,9 @@ mod tests {
     #[test]
     fn extract_into() {
         let expected_data = b"data that will be compressed";
-        let mut encoder = BzEncoder::new(expected_data.as_slice(), Compression::best());
-        let mut compressed = vec![];
-        encoder.read_to_end(&mut compressed).unwrap();
+        let mut encoder = lz4_flex::frame::FrameEncoder::new(Vec::new());
+        encoder.write_all(expected_data).unwrap();
+        let compressed = encoder.finish().unwrap();
 
         let build = Build {
             compressed: &compressed,
