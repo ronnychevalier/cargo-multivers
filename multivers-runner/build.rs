@@ -4,11 +4,8 @@
 //! from the environment variable `MULTIVERS_BUILDS_DESCRIPTION_PATH`.
 //! Then, it generates a Rust file that contains the source and the patches.
 use std::fs::File;
-use std::io::{BufRead, BufReader, Read, Write};
+use std::io::{BufReader, Read, Write};
 use std::path::{Path, PathBuf};
-
-use bzip2::Compression;
-use bzip2::read::BzEncoder;
 
 use qbsdiff::Bsdiff;
 
@@ -191,14 +188,13 @@ impl BuildsDescription {
     }
 }
 
-fn compress(reader: impl BufRead) -> Result<Vec<u8>, Exit> {
-    let mut compressor = BzEncoder::new(reader, Compression::best());
-    let mut buffer = Vec::new();
-    compressor
-        .read_to_end(&mut buffer)
+fn compress(mut reader: impl Read) -> Result<Vec<u8>, Exit> {
+    let mut encoder = lz4_flex::frame::FrameEncoder::new(Vec::new());
+    std::io::copy(&mut reader, &mut encoder)
         .map_err(|_| proc_exit::sysexits::IO_ERR.with_message("Failed to compress data"))?;
-
-    Ok(buffer)
+    encoder
+        .finish()
+        .map_err(|_| proc_exit::sysexits::IO_ERR.with_message("Failed to compress data"))
 }
 
 fn bsdiff(source: &[u8], target: &[u8]) -> Result<Vec<u8>, Exit> {

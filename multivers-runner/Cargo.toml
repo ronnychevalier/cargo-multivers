@@ -16,7 +16,7 @@ debug = ["dep:env_logger", "dep:log"]
 cfg-if = "1"
 proc-exit = "2"
 qbsdiff = "1.4"
-bzip2 = { version = "0.6", features = ["static"] }
+lz4_flex = { version = "0.13", features = ["frame"] }
 log = { version = "0.4", optional = true }
 env_logger = { version = "0.11", optional = true }
 
@@ -32,7 +32,7 @@ serde = { version = "1.0.185", features = ["derive"] }
 serde_json = "1"
 quote = { version = "1.0.29", default-features = false }
 qbsdiff = "1.4"
-bzip2 = { version = "0.6", features = ["static"] }
+lz4_flex = { version = "0.13", features = ["frame"] }
 proc-exit = "2"
 
 [lints]
