@@ -11,10 +11,8 @@ use predicates::prelude::*;
 
 #[cfg(test)]
 fn cargo_multivers() -> Command {
-    let multivers_manifest = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
-
     let mut cargo_multivers = CargoBuild::new()
-        .manifest_path(multivers_manifest)
+        .bin("cargo-multivers")
         .run()
         .unwrap()
         .command();
