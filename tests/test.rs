@@ -34,6 +34,7 @@ fn build_crate(
     use itertools::Itertools;
 
     let out_dir: tempfile::TempDir = tempfile::tempdir().unwrap();
+    let target_dir = out_dir.path().join("target");
     let test_manifest = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
         .join(name)
