@@ -69,6 +69,7 @@ fn build_and_run_crate(
 ///
 /// It should build without a runner since every build leads to the same binary.
 #[test]
+#[cfg(any(target_os = "linux", windows))]
 fn crate_that_does_nothing() {
     build_and_run_crate("test-nothing", |_command| {
         #[cfg(coverage)]
