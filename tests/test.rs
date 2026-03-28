@@ -29,6 +29,10 @@ fn build_crate(
     name: &str,
     modify_command_callback: impl FnOnce(&mut std::process::Command),
 ) -> (Assert, tempfile::TempDir) {
+    use std::ffi::OsStr;
+
+    use itertools::Itertools;
+
     let out_dir: tempfile::TempDir = tempfile::tempdir().unwrap();
     let test_manifest = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
@@ -43,6 +47,13 @@ fn build_crate(
         .arg(out_dir.path());
 
     modify_command_callback(&mut cargo_multivers);
+
+    if !cargo_multivers
+        .get_args()
+        .contains(OsStr::new("--target-dir"))
+    {
+        cargo_multivers.args(["--", "--target-dir", &target_dir.display().to_string()]);
+    };
 
     (cargo_multivers.assert(), out_dir)
 }
@@ -114,24 +125,6 @@ rustflags = ["invalid flag"]
     })
     .0
     .failure();
-}
-
-/// Checks that `-- --target-dir` works.
-#[test]
-fn target_dir_arg() {
-    let target_dir = tempfile::tempdir().unwrap();
-    let expected_args = ["target", "diiiiir", "''"];
-    build_and_run_crate("test-argv", |command| {
-        command.arg("--").arg("--target-dir").arg(target_dir.path());
-    })
-    .0
-    .args(expected_args)
-    .assert()
-    .success()
-    .stdout(predicate::str::ends_with(format!(
-        "{}\n",
-        expected_args.join(" ")
-    )));
 }
 
 /// Checks that we can build a crate that is part of a workspace.
