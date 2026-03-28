@@ -35,6 +35,7 @@ fn build_crate(
 
     let out_dir: tempfile::TempDir = tempfile::tempdir().unwrap();
     let target_dir = out_dir.path().join("target");
+    std::fs::create_dir(&target_dir).unwrap();
     let test_manifest = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
         .join(name)
