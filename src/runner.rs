@@ -113,3 +113,21 @@ pub use multivers_runner::main;
         Ok(output_path)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use cargo_metadata::MetadataCommand;
+
+    use crate::runner::RunnerBuilder;
+
+    #[test]
+    fn metadata_works() {
+        let tmp = tempfile::tempdir().unwrap();
+        let runner = RunnerBuilder::generate_crate_sources(tmp.path(), "0.3", vec![]).unwrap();
+        let metadata = MetadataCommand::new()
+            .manifest_path(&runner.manifest_path)
+            .exec()
+            .unwrap();
+        assert_eq!(metadata.root_package().unwrap().name, "package-multivers");
+    }
+}
