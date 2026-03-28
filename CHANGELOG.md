@@ -5,14 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.11.0] - 2026-03-28
 
-### ⚡ Performance
+### Performance
 
 - Use `lz4_flex` for compression instead of `bzip2` (#25)
 - Use `gdelta` instead of `qsbdiff` for the delta compression
 
-[Unreleased]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.10.0...HEAD
+### Testing
+
+- Add regression test for #20 (#23)
+- Use trycmd for some CLI tests
+
+[0.11.0]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.10.0...0.11.0
 
 ## [0.10.0] - 2026-03-18
 
