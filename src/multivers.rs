@@ -196,7 +196,7 @@ impl Multivers {
 
                 let bin_path = cargo
                     .find_executable()?
-                    .ok_or_else(|| anyhow::anyhow!("Failed to find a binary"))?;
+                    .context("Failed to find a binary")?;
 
                 self.progress.inc(1);
 

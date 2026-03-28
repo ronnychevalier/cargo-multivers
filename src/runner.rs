@@ -103,7 +103,7 @@ pub use multivers_runner::main;
 
         let bin_path = cargo
             .find_executable()?
-            .ok_or_else(|| anyhow::anyhow!("Failed to build the runner"))?;
+            .context("Failed to build the runner")?;
 
         let mut output_path = bin_path.clone();
         output_path.set_file_name(original_filename);

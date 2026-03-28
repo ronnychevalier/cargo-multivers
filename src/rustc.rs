@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::sync::LazyLock;
 
+use anyhow::Context;
+
 // We do not call "cargo rustc" (which would be simpler),
 // because it takes too much time to execute each time.
 // Calling rustc directly is faster.
@@ -36,7 +38,7 @@ impl Rustc {
             .lines()
             .map_while(Result::ok)
             .find_map(|line| line.strip_prefix("host: ").map(ToOwned::to_owned))
-            .ok_or_else(|| anyhow::anyhow!("Failed to detect default target"))
+            .context("Failed to detect default target")
     }
 
     /// Returns all CPU features supported by a given CPU on a target
