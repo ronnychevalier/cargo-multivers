@@ -65,7 +65,7 @@ _(the problematic features can't be hard-coded because, over time, `std::arch` m
 
 ## Supported Operating Systems
 
-This project is tested on Windows and Linux (due to the use of `memfd_create`, only Linux >= v3.17 is supported).
+This project is tested on Windows, Linux, and MacOS (due to the use of `memfd_create`, only Linux >= v3.17 is supported).
 
 ## Supported Architectures
 
