@@ -21,6 +21,7 @@ impl RunnerBuilder {
         multivers_runner_version: &str,
         features: Vec<String>,
     ) -> anyhow::Result<Self> {
+        let output_directory = output_directory.into();
         let root_directory = output_directory.join("package-runner");
         let src_directory = root_directory.join("src");
         let manifest_path = root_directory.join("Cargo.toml");
