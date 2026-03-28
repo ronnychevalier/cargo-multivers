@@ -10,30 +10,11 @@ Arguments:
           Arguments given to cargo build
 
 Options:
-      --target <TRIPLE>
-          Build for the target triple
-
       --print <INFORMATION>
           Print information on stdout
 
           Possible values:
           - cpu-features: Prints the list of CPU features supported by the target
-
-      --cpus <CPUs>
-          Comma-separated list of CPUs to use as a target
-
-      --exclude-cpu-features <CPU-FEATURES>
-          Comma-separated list of CPU features to exclude from the builds
-
-      --runner-version <VERSION>
-          Specify the version of the runner to use
-          
-          [default: 0.3]
-
-      --profile <PROFILE-NAME>
-          Build artifacts with the specified profile
-          
-          [default: release]
 
       --color <WHEN>
           Color preferences for program output
@@ -41,15 +22,44 @@ Options:
           [default: auto]
           [possible values: auto, always, never]
 
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+
+Compilation Options:
+      --target <TRIPLE>
+          Build for the target triple
+
+      --cpus <CPUs>
+          Comma-separated list of CPUs to use as a target
+
+      --exclude-cpu-features <CPU-FEATURES>
+          Comma-separated list of CPU features to exclude from the builds
+
+      --profile <PROFILE-NAME>
+          Build artifacts with the specified profile
+          
+          [default: release]
+
       --out-dir <PATH>
           Copy final artifacts to this directory
+
+Runner Options:
+      --runner-version <VERSION>
+          Specify the version of the runner to use
+          
+          [default: 0.3]
 
       --runner-features <RUNNER_FEATURES>
           Space-separated list of features to activate for the runner (only "debug" is available at the moment)
 
+Manifest Options:
       --manifest-path <PATH>
           Path to Cargo.toml
 
+Package Selection:
   -p, --package <SPEC>
           Package to process (see `cargo help pkgid`)
 
@@ -59,6 +69,7 @@ Options:
       --exclude <SPEC>
           Exclude packages from being processed
 
+Feature Selection:
       --all-features
           Activate all available features
 
@@ -67,12 +78,6 @@ Options:
 
   -F, --features <FEATURES>
           Space-separated list of features to activate
-
-  -h, --help
-          Print help (see a summary with '-h')
-
-  -V, --version
-          Print version
 """
 stderr = ""
 

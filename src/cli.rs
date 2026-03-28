@@ -21,8 +21,12 @@ pub enum Print {
 
 #[derive(clap::Args)]
 pub struct Args {
+    /// Arguments given to cargo build
+    #[clap(raw = true)]
+    pub args: Vec<String>,
+
     /// Build for the target triple
-    #[clap(long, value_name = "TRIPLE")]
+    #[clap(long, value_name = "TRIPLE", help_heading = "Compilation Options")]
     pub target: Option<String>,
 
     /// Print information on stdout
@@ -34,7 +38,8 @@ pub struct Args {
         long,
         use_value_delimiter = true,
         value_delimiter = ',',
-        value_name = "CPUs"
+        value_name = "CPUs",
+        help_heading = "Compilation Options"
     )]
     pub cpus: Option<Vec<String>>,
 
@@ -43,16 +48,27 @@ pub struct Args {
         long,
         use_value_delimiter = true,
         value_delimiter = ',',
-        value_name = "CPU-FEATURES"
+        value_name = "CPU-FEATURES",
+        help_heading = "Compilation Options"
     )]
     pub exclude_cpu_features: Option<Vec<String>>,
 
     /// Specify the version of the runner to use
-    #[clap(long, value_name = "VERSION", default_value = "0.3")]
+    #[clap(
+        long,
+        value_name = "VERSION",
+        default_value = "0.3",
+        help_heading = "Runner Options"
+    )]
     pub runner_version: String,
 
     /// Build artifacts with the specified profile
-    #[clap(long, value_name = "PROFILE-NAME", default_value = "release")]
+    #[clap(
+        long,
+        value_name = "PROFILE-NAME",
+        default_value = "release",
+        help_heading = "Compilation Options"
+    )]
     pub profile: String,
 
     /// Color preferences for program output
@@ -60,25 +76,21 @@ pub struct Args {
     pub color: ColorChoice,
 
     /// Copy final artifacts to this directory
-    #[clap(long, value_name = "PATH")]
+    #[clap(long, value_name = "PATH", help_heading = "Compilation Options")]
     pub out_dir: Option<PathBuf>,
 
-    #[clap(long, value_delimiter = ' ')]
+    #[clap(long, value_delimiter = ' ', help_heading = "Runner Options")]
     /// Space-separated list of features to activate for the runner (only "debug" is available at the moment)
     pub runner_features: Vec<String>,
 
-    #[command(flatten)]
+    #[command(flatten, next_help_heading = "Manifest Options")]
     pub manifest: clap_cargo::Manifest,
 
-    #[command(flatten)]
+    #[command(flatten, next_help_heading = "Package Selection")]
     pub workspace: clap_cargo::Workspace,
 
-    #[command(flatten)]
+    #[command(flatten, next_help_heading = "Feature Selection")]
     pub features: clap_cargo::Features,
-
-    /// Arguments given to cargo build
-    #[clap(raw = true)]
-    pub args: Vec<String>,
 }
 
 impl Args {
