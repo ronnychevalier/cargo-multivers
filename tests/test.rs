@@ -72,8 +72,15 @@ fn build_and_run_crate(
         .path()
         .join(format!("{name}{}", std::env::consts::EXE_SUFFIX));
 
-    assert_eq!(std::fs::read_dir(out_dir.path()).into_iter().count(), 1);
     assert!(multivers_runner.exists());
+    assert_eq!(
+        std::fs::read_dir(out_dir.path())
+            .unwrap()
+            .filter_map(Result::ok)
+            .filter(|e| e.file_type().unwrap().is_file())
+            .count(),
+        1
+    );
 
     (Command::new(multivers_runner), out_dir)
 }
