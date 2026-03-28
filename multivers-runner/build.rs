@@ -125,7 +125,7 @@ impl BuildsDescription {
                     proc_exit::sysexits::IO_ERR
                         .with_message(format!("Failed to read build {}", build.path.display()))
                 })?;
-                let patch = bsdiff(&source, &target)?;
+                let patch = gdelta_lz4(&source, &target)?;
                 let features = build.features;
                 let features_string = features.join(", ");
 
@@ -195,9 +195,11 @@ fn compress(mut reader: impl Read) -> Result<Vec<u8>, Exit> {
         .map_err(|_| proc_exit::sysexits::IO_ERR.with_message("Failed to compress data"))
 }
 
-fn bsdiff(source: &[u8], target: &[u8]) -> Result<Vec<u8>, Exit> {
-    gdelta::encode(target, source)
-        .map_err(|_| proc_exit::sysexits::IO_ERR.with_message("Failed to generate a patch"))
+fn gdelta_lz4(source: &[u8], target: &[u8]) -> Result<Vec<u8>, Exit> {
+    let patch = gdelta::encode(target, source)
+        .map_err(|_| proc_exit::sysexits::IO_ERR.with_message("Failed to generate a patch"))?;
+
+    compress(&patch[..])
 }
 
 fn main() -> Result<(), Exit> {

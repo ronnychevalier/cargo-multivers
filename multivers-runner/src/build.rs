@@ -51,8 +51,11 @@ impl Build<'_> {
             let mut source = Vec::with_capacity(source.compressed.len());
             decoder.read_to_end(&mut source)?;
 
-            let result =
-                gdelta::decode(self.compressed, &source).map_err(|_| std::io::Error::other(""))?;
+            let mut patch = Vec::with_capacity(self.compressed.len());
+            let mut decoder = lz4_flex::frame::FrameDecoder::new(self.compressed);
+            decoder.read_to_end(&mut patch)?;
+
+            let result = gdelta::decode(&patch, &source).map_err(|_| std::io::Error::other(""))?;
             output.write_all(&result)?;
         } else {
             let mut decoder = lz4_flex::frame::FrameDecoder::new(self.compressed);
