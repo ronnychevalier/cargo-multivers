@@ -17,7 +17,7 @@ pub struct RunnerBuilder {
 impl RunnerBuilder {
     /// Generates the sources of the crate to build the runner
     pub fn generate_crate_sources(
-        output_directory: PathBuf,
+        output_directory: impl Into<PathBuf>,
         multivers_runner_version: &str,
         features: Vec<String>,
     ) -> anyhow::Result<Self> {
