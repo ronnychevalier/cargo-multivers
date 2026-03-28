@@ -1,4 +1,6 @@
 use std::convert::Infallible;
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -18,22 +20,15 @@ impl Executable for Build<'_> {
             .and_then(|path| path.file_name().map(ToOwned::to_owned))
             .unwrap_or_default();
 
-        let mut file = tempfile::Builder::new()
-            .suffix(&exe_filename)
-            .tempfile()
-            .map_err(|_| {
-                proc_exit::Code::FAILURE.with_message("Failed to create a temporary file")
-            })?;
-        // Execution with a temporary file will likely fail since it is common for `/tmp` to be mounted with noexec.
+        let mut builder = tempfile::Builder::new();
+        builder.suffix(&exe_filename);
+
         #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
+        builder.permissions(std::fs::Permissions::from_mode(0o700));
 
-            let metadata = file.as_file().metadata()?;
-            let mut permissions = metadata.permissions();
-
-            permissions.set_mode(0o700);
-        }
+        let mut file = builder.tempfile().map_err(|_| {
+            proc_exit::Code::FAILURE.with_message("Failed to create a temporary file")
+        })?;
 
         self.extract_into(&mut file).map_err(|_| {
             proc_exit::Code::FAILURE.with_message(format!(
