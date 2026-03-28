@@ -48,7 +48,7 @@ pub struct Args {
     pub exclude_cpu_features: Option<Vec<String>>,
 
     /// Specify the version of the runner to use
-    #[clap(long, value_name = "VERSION", default_value = "0.2")]
+    #[clap(long, value_name = "VERSION", default_value = "0.3")]
     pub runner_version: String,
 
     /// Build artifacts with the specified profile

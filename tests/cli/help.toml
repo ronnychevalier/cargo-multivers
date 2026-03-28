@@ -28,7 +28,7 @@ Options:
       --runner-version <VERSION>
           Specify the version of the runner to use
           
-          [default: 0.2]
+          [default: 0.3]
 
       --profile <PROFILE-NAME>
           Build artifacts with the specified profile
