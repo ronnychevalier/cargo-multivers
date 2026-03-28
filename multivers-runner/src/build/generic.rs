@@ -29,7 +29,9 @@ impl Executable for Build<'_> {
         {
             use std::os::unix::fs::PermissionsExt;
 
-            let metadata = file.as_file().metadata()?;
+            let metadata = file.as_file().metadata().map_err(|_| {
+                proc_exit::Code::FAILURE.with_message("Could not get temporary file metadata")
+            })?;
             let mut permissions = metadata.permissions();
 
             permissions.set_mode(0o700);
