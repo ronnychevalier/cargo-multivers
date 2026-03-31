@@ -48,24 +48,23 @@ fn build_crate(
 
     modify_command_callback(&mut cargo_multivers);
 
-    if !cargo_multivers
-        .get_args()
-        .contains(OsStr::new("--target-dir"))
-    {
+    if !cargo_multivers.get_args().contains(OsStr::new("--")) {
         cargo_multivers.args(["--", "--target-dir", &target_dir.display().to_string()]);
-    };
+    }
 
     (cargo_multivers.assert(), out_dir)
 }
 
 #[cfg(test)]
 fn build_and_run_crate(
-    name: &str,
+    crate_name: &str,
+    bin_name: Option<&str>,
     modify_command_callback: impl FnOnce(&mut std::process::Command),
 ) -> (Command, tempfile::TempDir) {
-    let (assert, out_dir) = build_crate(name, modify_command_callback);
+    let (assert, out_dir) = build_crate(crate_name, modify_command_callback);
     println!("{assert}");
 
+    let name = bin_name.unwrap_or(crate_name);
     let multivers_runner = out_dir
         .path()
         .join(format!("{name}{}", std::env::consts::EXE_SUFFIX));
@@ -89,7 +88,7 @@ fn build_and_run_crate(
 #[test]
 #[cfg(any(target_os = "linux", windows))]
 fn crate_that_does_nothing() {
-    build_and_run_crate("test-nothing", |_command| {
+    build_and_run_crate("test-nothing", None, |_command| {
         #[cfg(coverage)]
         _command.env_remove("RUSTFLAGS");
     })
@@ -103,7 +102,7 @@ fn crate_that_does_nothing() {
 #[test]
 fn crate_that_prints_argv() {
     let expected_args = ["z", "foo2", "''"];
-    build_and_run_crate("test-argv", |_| ())
+    build_and_run_crate("test-argv", None, |_| ())
         .0
         .args(expected_args)
         .assert()
@@ -112,6 +111,43 @@ fn crate_that_prints_argv() {
             "{}\n",
             expected_args.join(" ")
         )));
+}
+
+/// Checks that `cargo multivers` returns an error when building a package with multiple bins.
+///
+/// Regression test (see #15).
+#[test]
+fn multiple_bins_err() {
+    build_crate("test-multiplebins", |_| ())
+        .0
+        .failure()
+        .stderr("Error: More than one executable built, missing binary selection. Select one using something like `cargo multivers -- --bin my_bin`\n");
+
+    build_crate("test-multiplebins",  |command| {
+        command.args(["--", "--bin", "bin1", "--bin", "bin2"]);
+    })
+    .0
+    .failure()
+    .stderr("Error: More than one executable built, missing binary selection. Select one using something like `cargo multivers -- --bin my_bin`\n");
+}
+
+#[test]
+fn multiple_bins_selected() {
+    build_and_run_crate("test-multiplebins", Some("bin1"), |command| {
+        command.args(["--", "--bin", "bin1"]);
+    })
+    .0
+    .assert()
+    .success()
+    .stdout("bin1\n");
+
+    build_and_run_crate("test-multiplebins", Some("bin2"), |command| {
+        command.args(["--", "--bin", "bin2"]);
+    })
+    .0
+    .assert()
+    .success()
+    .stdout("bin2\n");
 }
 
 /// Checks that `$CARGO_HOME/config.toml` is taken into account when building a crate
@@ -140,7 +176,7 @@ rustflags = ["invalid flag"]
 #[test]
 fn crate_within_workspace() {
     let expected_args = ["workspace", "abc", "0987"];
-    build_and_run_crate("test-workspace", |_| ())
+    build_and_run_crate("test-workspace", None, |_| ())
         .0
         .args(expected_args)
         .assert()
@@ -157,7 +193,7 @@ fn crate_within_workspace() {
 #[test]
 fn rebuild_std_env() {
     let expected_args = ["z", "foo2", "''"];
-    build_and_run_crate("test-argv", |command| {
+    build_and_run_crate("test-argv", None, |command| {
         command.env("CARGO_UNSTABLE_BUILD_STD", "std");
     })
     .0
@@ -174,7 +210,7 @@ fn rebuild_std_env() {
 #[test]
 fn profile_dev() {
     let expected_args = ["z", "foo2", "''"];
-    build_and_run_crate("test-argv", |command| {
+    build_and_run_crate("test-argv", None, |command| {
         command.arg("--profile=dev");
     })
     .0
@@ -222,7 +258,7 @@ fn correct_build_used() {
         "xsave" "xsavec" "xsaveopt" "xsaves"
     );
 
-    build_and_run_crate("test-correct-build-used", |build_command| {
+    build_and_run_crate("test-correct-build-used", None, |build_command| {
         build_command.args(["--cpus", "x86-64,x86-64-v2,x86-64-v3,x86-64-v4,native"]);
     })
     .0

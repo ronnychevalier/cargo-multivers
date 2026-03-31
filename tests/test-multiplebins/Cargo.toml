@@ -1,0 +1,14 @@
+[package]
+name = "test-multiplebins"
+edition = "2024"
+publish = false
+
+[dependencies]
+
+[workspace]
+
+[[bin]]
+name = "bin1"
+
+[[bin]]
+name = "bin2"
