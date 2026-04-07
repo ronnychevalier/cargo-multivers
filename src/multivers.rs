@@ -201,7 +201,7 @@ impl Multivers {
                 self.progress.inc(1);
 
                 hasher.update(target_features_flags.as_bytes());
-                let filename = format!("{:x}", hasher.finalize_reset());
+                let filename = format!("{:x}", base16ct::HexDisplay(&hasher.finalize_reset()));
 
                 let output_path_parent = self
                     .target_dir
