@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.11.1] - 2026-04-09
+
+### Bug Fixes
+
+- Return an error when multiple bins of a package are built
+
+### Refactor
+
+- Move `cargo multivers` options into various subsections of the `--help` message
+
+### Testing
+
+- Add macos-26-intel in the test matrix
+- Feature-gate a test that only supports Linux and Windows
+- Add a test on the sources generated for the runner
+- Use a distinct target-dir per test to support `cargo nextest`
+
 ## [0.11.0] - 2026-03-28
 
 ### Performance
