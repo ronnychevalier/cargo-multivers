@@ -113,24 +113,9 @@ fn crate_that_prints_argv() {
         )));
 }
 
-/// Checks that `cargo multivers` returns an error when building a package with multiple bins.
+/// Checks that `cargo multivers` can work by selecting a bin when a package has multiple bins.
 ///
-/// Regression test (see #15).
-#[test]
-fn multiple_bins_err() {
-    build_crate("test-multiplebins", |_| ())
-        .0
-        .failure()
-        .stderr("Error: More than one executable built, missing binary selection. Select one using something like `cargo multivers -- --bin my_bin`\n");
-
-    build_crate("test-multiplebins",  |command| {
-        command.args(["--", "--bin", "bin1", "--bin", "bin2"]);
-    })
-    .0
-    .failure()
-    .stderr("Error: More than one executable built, missing binary selection. Select one using something like `cargo multivers -- --bin my_bin`\n");
-}
-
+/// See #15
 #[test]
 fn multiple_bins_selected() {
     build_and_run_crate("test-multiplebins", Some("bin1"), |command| {

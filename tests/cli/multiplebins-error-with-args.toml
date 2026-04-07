@@ -1,0 +1,14 @@
+# Checks that `cargo multivers` returns an error when building a package with multiple bins.
+#
+# Regression test (see #15).
+bin.name = "cargo-multivers"
+args = "multivers --manifest-path test-multiplebins/Cargo.toml -- --bin bin1 --bin bin2"
+stdout = """
+   Compiling test-multiplebins v0.0.0 ([CWD]/test-multiplebins)
+"""
+stderr = """
+Error: More than one executable built, missing binary selection. Select one using something like `cargo multivers -- --bin my_bin`
+"""
+status.code = 1
+fs.sandbox = true
+fs.cwd = "multiplebins-error.in"
