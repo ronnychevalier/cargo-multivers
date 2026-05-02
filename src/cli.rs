@@ -83,6 +83,10 @@ pub struct Args {
     /// Space-separated list of features to activate for the runner (only "debug" is available at the moment)
     pub runner_features: Vec<String>,
 
+    #[clap(long, help_heading = "Runner Options")]
+    /// Path to a custom runner Cargo.toml (by default, one is generated automatically)
+    pub runner_manifest_path: Option<PathBuf>,
+
     #[command(flatten, next_help_heading = "Manifest Options")]
     pub manifest: clap_cargo::Manifest,
 

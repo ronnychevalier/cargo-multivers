@@ -1,4 +1,5 @@
 use std::ffi::OsStr;
+use std::fmt::Display;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
@@ -15,11 +16,23 @@ pub struct RunnerBuilder {
 }
 
 impl RunnerBuilder {
+    pub fn from_manifest_path(
+        output_directory: impl Into<PathBuf>,
+        manifest_path: impl Into<PathBuf>,
+    ) -> Self {
+        let output_directory = output_directory.into();
+        let manifest_path = manifest_path.into();
+
+        Self {
+            output_directory,
+            manifest_path,
+        }
+    }
+
     /// Generates the sources of the crate to build the runner
     pub fn generate_crate_sources(
         output_directory: impl Into<PathBuf>,
         multivers_runner_version: &str,
-        features: Vec<String>,
     ) -> anyhow::Result<Self> {
         let output_directory = output_directory.into();
         let root_directory = output_directory.join("package-runner");
@@ -29,21 +42,16 @@ impl RunnerBuilder {
         let local_multivers_runner_dependency =
             Path::new(env!("CARGO_MANIFEST_DIR")).join("multivers-runner");
 
-        let features = features
-            .into_iter()
-            .map(|feature| format!("\"{feature}\""))
-            .join(", ");
-
         let local_path = if local_multivers_runner_dependency.exists() {
             let local_multivers_runner_dependency = local_multivers_runner_dependency
                 .to_string_lossy()
                 .replace('\\', "/");
-            format!(r#", path = "{local_multivers_runner_dependency}""#,)
+            format!(r#", path = "{local_multivers_runner_dependency}""#)
         } else {
             String::new()
         };
         let dependency = format!(
-            r#"multivers-runner = {{ version = "{multivers_runner_version}", features = [{features}]{local_path} }}"#
+            r#"multivers-runner = {{ version = "{multivers_runner_version}"{local_path} }}"#
         );
 
         let manifest = format!(
@@ -54,6 +62,9 @@ edition = "2021"
 
 [dependencies]
 {dependency}
+
+[features]
+debug = ["multivers-runner/debug"]
 
 [profile.release]
 lto = true
@@ -80,12 +91,18 @@ pub use multivers_runner::main;
     }
 
     /// Builds a runner that includes the given builds
-    pub fn build(
+    pub fn build<S>(
         &self,
         target: &str,
         builds_path: &Path,
         original_filename: &OsStr,
-    ) -> anyhow::Result<PathBuf> {
+        mut features: impl Iterator<Item = S>,
+    ) -> anyhow::Result<PathBuf>
+    where
+        S: Display,
+    {
+        let features = features.join(" ");
+
         // We do not propagate `CARGO_UNSTABLE_BUILD_STD` since if `panic_abort` is not
         // specified, the build of the runner will fail (since its profile specifies `panic=abort`).
         // A proper fix could be to clear the whole environment before spawning this `cargo build`,
@@ -95,6 +112,7 @@ pub use multivers_runner::main;
             .target(target)
             .target_dir(&self.output_directory)
             .manifest_path(&self.manifest_path)
+            .features(features)
             .env_remove("CARGO_UNSTABLE_BUILD_STD")
             .env("MULTIVERS_BUILDS_DESCRIPTION_PATH", builds_path);
 
@@ -124,7 +142,7 @@ mod tests {
     #[test]
     fn metadata_works() {
         let tmp = tempfile::tempdir().unwrap();
-        let runner = RunnerBuilder::generate_crate_sources(tmp.path(), "0.3", vec![]).unwrap();
+        let runner = RunnerBuilder::generate_crate_sources(tmp.path(), "0.3").unwrap();
         let metadata = MetadataCommand::new()
             .manifest_path(&runner.manifest_path)
             .exec()

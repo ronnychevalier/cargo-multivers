@@ -98,7 +98,7 @@ fn crate_that_does_nothing() {
     .stdout("");
 }
 
-/// Checks that we can build a crate that prints its argv and that works as expected
+/// Checks that it can build a crate that prints its argv
 #[test]
 fn crate_that_prints_argv() {
     let expected_args = ["z", "foo2", "''"];
@@ -111,6 +111,47 @@ fn crate_that_prints_argv() {
             "{}\n",
             expected_args.join(" ")
         )));
+}
+
+/// Checks that it can build a crate that prints its argv with a custom runner
+#[test]
+fn crate_that_prints_argv_with_custom_runner() {
+    let custom_runner = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("custom-runner")
+        .join("Cargo.toml");
+    let expected_args = ["custom", "foo2", "''"];
+    build_and_run_crate("test-argv", None, |command| {
+        command.args([
+            "--runner-manifest-path",
+            custom_runner.as_os_str().to_str().unwrap(),
+        ]);
+    })
+    .0
+    .args(expected_args)
+    .assert()
+    .success()
+    .stdout(predicate::str::ends_with(format!(
+        "{}\n",
+        expected_args.join(" ")
+    )));
+}
+
+/// Checks that it fails to build with an invalid custom runner manifest path
+#[test]
+fn invalid_custom_runner_manifest_path() {
+    let custom_runner = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("custom-runner")
+        .join("invalid.toml");
+    build_crate("test-argv", |command| {
+        command.args([
+            "--runner-manifest-path",
+            custom_runner.as_os_str().to_str().unwrap(),
+        ]);
+    })
+    .0
+    .failure();
 }
 
 /// Checks that `cargo multivers` can work by selecting a bin when a package has multiple bins.

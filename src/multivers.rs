@@ -58,6 +58,7 @@ pub struct Multivers {
     progress: ProgressBar,
     profile: String,
     cargo_args: Vec<String>,
+    runner_features: Vec<String>,
 }
 
 impl Multivers {
@@ -82,12 +83,12 @@ impl Multivers {
             .join(clap::crate_name!())
             .into_std_path_buf();
 
-        let runner = RunnerBuilder::generate_crate_sources(
-            target_dir.clone(),
-            &args.runner_version,
-            args.runner_features,
-        )
-        .context("Failed to generate the source files of the runner")?;
+        let runner = if let Some(path) = args.runner_manifest_path {
+            RunnerBuilder::from_manifest_path(target_dir.clone(), path)
+        } else {
+            RunnerBuilder::generate_crate_sources(target_dir.clone(), &args.runner_version)
+                .context("Failed to generate the source files of the runner")?
+        };
 
         let progress = indicatif::ProgressBar::new(0).with_style(
             ProgressStyle::with_template(
@@ -115,6 +116,7 @@ impl Multivers {
             progress,
             cargo_args: args.args,
             profile: args.profile,
+            runner_features: args.runner_features,
         })
     }
 
@@ -259,7 +261,7 @@ impl Multivers {
 
         let has_bins = selected_packages
             .iter()
-            .any(|&package| package.targets.iter().any(|target| target.is_bin()));
+            .any(|&package| package.targets.iter().any(cargo_metadata::Target::is_bin));
         if !has_bins {
             anyhow::bail!(
                 "No binary package detected. Only binaries can be built using cargo multivers."
@@ -342,9 +344,12 @@ impl Multivers {
                     builds.builds.len(),
                 );
 
-                let bin_path = self
-                    .runner
-                    .build(&self.target, &builds_path, &original_filename)?;
+                let bin_path = self.runner.build(
+                    &self.target,
+                    &builds_path,
+                    &original_filename,
+                    self.runner_features.iter(),
+                )?;
 
                 if let Some(out_dir) = self.out_dir.as_deref() {
                     std::fs::create_dir_all(out_dir).with_context(|| {

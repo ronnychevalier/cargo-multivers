@@ -55,6 +55,9 @@ Runner Options:
       --runner-features <RUNNER_FEATURES>
           Space-separated list of features to activate for the runner (only "debug" is available at the moment)
 
+      --runner-manifest-path <RUNNER_MANIFEST_PATH>
+          Path to a custom runner Cargo.toml (by default, one is generated automatically)
+
 Manifest Options:
       --manifest-path <PATH>
           Path to Cargo.toml

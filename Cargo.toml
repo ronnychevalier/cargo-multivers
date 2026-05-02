@@ -52,6 +52,7 @@ resolver = "3"
 members = ["multivers-runner"]
 exclude = [
     "tests/test-argv",
+    "tests/custom-runner",
     "tests/test-nothing",
     "tests/test-workspace",
     "tests/cli/nobin.in/test-nobin",

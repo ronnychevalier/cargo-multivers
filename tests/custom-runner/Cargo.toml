@@ -1,0 +1,14 @@
+[package]
+name = "test-custom-runner"
+publish = false
+edition = "2024"
+
+[dependencies]
+multivers-runner = "0.3"
+
+[profile.release]
+lto = true
+strip = "symbols"
+opt-level = "z"
+codegen-units = 1
+panic = "abort"
