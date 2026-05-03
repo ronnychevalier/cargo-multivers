@@ -58,7 +58,7 @@ impl RunnerBuilder {
             r#"[package]
 name = "package-multivers"
 publish = false
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 {dependency}
