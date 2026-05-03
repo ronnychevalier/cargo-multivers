@@ -42,13 +42,13 @@ jobs:
     - name: Default features
       run: cargo test --workspace
   msrv:
-    name: "Check MSRV: 1.88.0"
+    name: "Check MSRV: 1.91.0"
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@1.88.0
+      uses: dtolnay/rust-toolchain@1.91.0
     - uses: Swatinem/rust-cache@v2
     - name: Default features
       run: cargo check --all-targets
@@ -74,7 +74,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v6
     - name: Install Rust
-      uses: dtolnay/rust-toolchain@1.88.0
+      uses: dtolnay/rust-toolchain@1.91.0
       with:
         components: clippy
     - uses: Swatinem/rust-cache@v2
@@ -107,7 +107,7 @@ jobs:
     - uses: actions/checkout@v6
     - uses: EmbarkStudios/cargo-deny-action@v2
       with:
-        rust-version: "1.88.0"
+        rust-version: "1.91.0"
   test-action:
     name: Test cargo-multivers action
     runs-on: windows-latest
