@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Move `cargo multivers` options into various subsections of the `--help` message
 
+[0.11.1]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.11.0...0.11.1
+
 ### Testing
 
 - Add macos-26-intel in the test matrix
