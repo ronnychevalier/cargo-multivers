@@ -3,4 +3,4 @@ allow-expect-in-tests = true
 allow-dbg-in-tests = true
 allow-panic-in-tests = true
 allow-indexing-slicing-in-tests = true
-allowed-duplicate-crates = ["hashbrown"]
+allowed-duplicate-crates = ["hashbrown", "wit-bindgen"]
