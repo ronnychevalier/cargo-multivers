@@ -35,17 +35,22 @@ impl Executable for Build<'_> {
         })?;
 
         let fd = file.into_raw_fd();
-        let r = unsafe { fexecve(fd, argv, envp) };
+        unsafe { fexecve(fd, argv, envp) };
 
-        // Reaching here means `fexecve` failed (on success it never returns). On modern glibc
-        // `fexecve` issues `execveat(fd, "", …, AT_EMPTY_PATH)`, which returns ENOENT for an
-        // anonymous memfd under the amd64 binfmt_misc emulation used by Docker Desktop on Apple
-        // Silicon. A path-based exec of the same still-valid descriptor via `/proc/self/fd` works
-        // there, so fall back to it before giving up.
-        if let Ok(fd_path) = CString::new(format!("/proc/self/fd/{fd}")) {
+        // `fexecve` returns only on failure. glibc implements it as
+        // `execveat(fd, "", …, AT_EMPTY_PATH)`; when the build is run through an interpreter
+        // registered with binfmt_misc (e.g. an emulator), the kernel hands the descriptor to
+        // that interpreter, but a close-on-exec descriptor is already closed by then, so the
+        // call fails with ENOENT (see the BUGS section of execveat(2)). Only in that case, retry
+        // by path: the interpreter resolves `/proc/self/fd` at exec time, and the descriptor
+        // stays close-on-exec so it is not leaked into the executed program.
+        if std::io::Error::last_os_error().raw_os_error() == Some(libc::ENOENT)
+            && let Ok(fd_path) = CString::new(format!("/proc/self/fd/{fd}"))
+        {
             unsafe { execve(fd_path.as_ptr(), argv, envp) };
         }
 
-        Err(proc_exit::Exit::new(proc_exit::Code::new(r)))
+        let error = std::io::Error::last_os_error();
+        Err(proc_exit::Code::FAILURE.with_message(format!("Failed to execute the build: {error}")))
     }
 }
