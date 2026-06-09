@@ -1,9 +1,9 @@
 use std::convert::Infallible;
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
 use std::fs::File;
 use std::os::fd::{FromRawFd, IntoRawFd};
 
-use libc::{execve, fexecve};
+use libc::fexecve;
 
 use rustix::fd::IntoRawFd as _;
 use rustix::fd::OwnedFd;
@@ -39,15 +39,18 @@ impl Executable for Build<'_> {
 
         // `fexecve` returns only on failure. glibc implements it as
         // `execveat(fd, "", …, AT_EMPTY_PATH)`; when the build is run through an interpreter
-        // registered with binfmt_misc (e.g. an emulator), the kernel hands the descriptor to
-        // that interpreter, but a close-on-exec descriptor is already closed by then, so the
-        // call fails with ENOENT (see the BUGS section of execveat(2)). Only in that case, retry
-        // by path: the interpreter resolves `/proc/self/fd` at exec time, and the descriptor
-        // stays close-on-exec so it is not leaked into the executed program.
-        if std::io::Error::last_os_error().raw_os_error() == Some(libc::ENOENT)
-            && let Ok(fd_path) = CString::new(format!("/proc/self/fd/{fd}"))
-        {
-            unsafe { execve(fd_path.as_ptr(), argv, envp) };
+        // (a binfmt_misc handler such as an emulator, or a "#!" script), the kernel re-opens the
+        // descriptor for that interpreter, but a close-on-exec descriptor is already closed by
+        // then, so the call fails with ENOENT (see the BUGS section of execveat(2)). Clear
+        // close-on-exec and retry so the descriptor survives into the interpreter. This only
+        // happens on the interpreter path, so the executed program inherits the descriptor only
+        // in that case.
+        if std::io::Error::last_os_error().raw_os_error() == Some(libc::ENOENT) {
+            let flags = unsafe { libc::fcntl(fd, libc::F_GETFD) };
+            if flags >= 0 {
+                unsafe { libc::fcntl(fd, libc::F_SETFD, flags & !libc::FD_CLOEXEC) };
+                unsafe { fexecve(fd, argv, envp) };
+            }
         }
 
         let error = std::io::Error::last_os_error();
