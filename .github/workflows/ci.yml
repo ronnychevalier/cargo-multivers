@@ -169,4 +169,10 @@ jobs:
         set +e; out=$("$bin"); rc=$?; set -e
         echo "launcher exit=$rc stdout=[$out]"
         [ "$rc" -eq 0 ] || { echo "::error::launcher failed under emulation (exit $rc) -- fexecve-under-binfmt regression"; exit 1; }
-        [ -n "$out" ] || { echo "::error::launcher produced no output"; exit 1; }
+        # The fixture prints the selected variant's compile-time features; every x86-64
+        # variant includes sse2. Checking for it (rather than non-empty output) ensures
+        # qemu's own stdout noise (e.g. "Could not resolve /dev/fd/3") cannot pass the test.
+        case "$out" in
+          *sse2*) ;;
+          *) echo "::error::launcher did not print the variant's CPU features"; exit 1 ;;
+        esac
