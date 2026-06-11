@@ -36,6 +36,7 @@ impl Executable for Build<'_> {
 
         let fd = file.into_raw_fd();
         unsafe { fexecve(fd, argv, envp) };
+        let mut error = std::io::Error::last_os_error();
 
         // `fexecve` returns only on failure. glibc implements it as
         // `execveat(fd, "", …, AT_EMPTY_PATH)`; when the build is run through an interpreter
@@ -45,15 +46,16 @@ impl Executable for Build<'_> {
         // close-on-exec and retry so the descriptor survives into the interpreter. This only
         // happens on the interpreter path, so the executed program inherits the descriptor only
         // in that case.
-        if std::io::Error::last_os_error().raw_os_error() == Some(libc::ENOENT) {
+        if error.raw_os_error() == Some(libc::ENOENT) {
             let flags = unsafe { libc::fcntl(fd, libc::F_GETFD) };
-            if flags >= 0 {
-                unsafe { libc::fcntl(fd, libc::F_SETFD, flags & !libc::FD_CLOEXEC) };
+            if flags >= 0
+                && unsafe { libc::fcntl(fd, libc::F_SETFD, flags & !libc::FD_CLOEXEC) } >= 0
+            {
                 unsafe { fexecve(fd, argv, envp) };
+                error = std::io::Error::last_os_error();
             }
         }
 
-        let error = std::io::Error::last_os_error();
         Err(proc_exit::Code::FAILURE.with_message(format!("Failed to execute the build: {error}")))
     }
 }
