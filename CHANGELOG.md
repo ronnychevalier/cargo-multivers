@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.12.0] - 2026-06-11
+
+### Features
+
+- Support using a custom runner with the option `--runner-manifest-path` (e. g., can be needed if one wants to use a custom build script)
+
+### Bug Fixes
+
+- *(multivers-runner)* Clear CLOEXEC flag and retry when fexecve fails (#30)
+
+### Testing
+
+- Add regression test for #29 (#30)
+
+### Miscellaneous Tasks
+
+- Bump MSRV to Rust 1.91
+- Switch the automatically generated runner to edition 2024
+
+[0.12.0]: https://github.com/ronnychevalier/cargo-multivers/compare/v0.11.1...0.12.0
+
 ## [0.11.1] - 2026-04-09
 
 ### Bug Fixes
