@@ -34,8 +34,28 @@ impl Executable for Build<'_> {
                 .with_message("Failed to write the build to an anonymous memory file")
         })?;
 
-        let r = unsafe { fexecve(file.into_raw_fd(), argv, envp) };
+        let fd = file.into_raw_fd();
+        unsafe { fexecve(fd, argv, envp) };
+        let mut error = std::io::Error::last_os_error();
 
-        Err(proc_exit::Exit::new(proc_exit::Code::new(r)))
+        // `fexecve` returns only on failure. glibc implements it as
+        // `execveat(fd, "", …, AT_EMPTY_PATH)`; when the build is run through an interpreter
+        // (a binfmt_misc handler such as an emulator, or a "#!" script), the kernel re-opens the
+        // descriptor for that interpreter, but a close-on-exec descriptor is already closed by
+        // then, so the call fails with ENOENT (see the BUGS section of execveat(2)). Clear
+        // close-on-exec and retry so the descriptor survives into the interpreter. This only
+        // happens on the interpreter path, so the executed program inherits the descriptor only
+        // in that case.
+        if error.raw_os_error() == Some(libc::ENOENT) {
+            let flags = unsafe { libc::fcntl(fd, libc::F_GETFD) };
+            if flags >= 0
+                && unsafe { libc::fcntl(fd, libc::F_SETFD, flags & !libc::FD_CLOEXEC) } >= 0
+            {
+                unsafe { fexecve(fd, argv, envp) };
+                error = std::io::Error::last_os_error();
+            }
+        }
+
+        Err(proc_exit::Code::FAILURE.with_message(format!("Failed to execute the build: {error}")))
     }
 }

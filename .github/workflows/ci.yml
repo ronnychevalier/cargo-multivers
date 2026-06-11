@@ -122,3 +122,57 @@ jobs:
       with:
         manifest_path: tests/test-argv/Cargo.toml
         version: main
+  # Regression test for the fexecve-under-binfmt fix (issue #29). The bug only
+  # reproduces when a launcher's in-memory variant is exec'd through a kernel
+  # binfmt_misc interpreter. On an aarch64 runner, x86_64 is the foreign arch, so a
+  # cross-built x86_64 launcher runs through binfmt_misc -> qemu-user: it fails (255)
+  # without the fix and executes the selected variant with it.
+  emulation-test:
+    name: "Emulated x86_64 launcher (issue #29)"
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-unknown-linux-gnu
+    - uses: Swatinem/rust-cache@v2
+    - name: Register qemu binfmt handlers
+      uses: docker/setup-qemu-action@v3
+    - name: Install cross toolchain + x86 runtime libraries
+      run: |
+        # The arm runner's mirror (ports.ubuntu.com) carries no amd64 packages, so
+        # scope the existing sources to arm64 (otherwise apt 404s fetching amd64
+        # indexes there) and add an amd64-only source from archive.ubuntu.com.
+        sudo sed -i '/^Types:/a Architectures: arm64' /etc/apt/sources.list.d/ubuntu.sources
+        sudo dpkg --add-architecture amd64
+        printf 'Types: deb\nURIs: http://archive.ubuntu.com/ubuntu\nSuites: noble noble-updates\nComponents: main\nArchitectures: amd64\nSigned-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n' \
+          | sudo tee /etc/apt/sources.list.d/amd64.sources
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          gcc-x86-64-linux-gnu libc6-dev-amd64-cross libc6:amd64 libgcc-s1:amd64
+    - name: Build an x86_64 multivers launcher from the fixture
+      env:
+        CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: x86_64-linux-gnu-gcc
+      run: |
+        cargo install --path . --root "$RUNNER_TEMP/mv" --locked
+        "$RUNNER_TEMP/mv/bin/cargo-multivers" multivers \
+          --manifest-path tests/test-correct-build-used/Cargo.toml \
+          --target x86_64-unknown-linux-gnu \
+          --cpus x86-64,x86-64-v2,x86-64-v4 \
+          --out-dir "$RUNNER_TEMP/out"
+    - name: Run the launcher under emulation and assert it executed a variant
+      run: |
+        bin="$RUNNER_TEMP/out/test-correct-build-used"
+        grep -qa "anonymous memory file" "$bin" || { echo "::error::not a multivers launcher (variants deduplicated to one)"; exit 1; }
+        set +e; out=$("$bin"); rc=$?; set -e
+        echo "launcher exit=$rc stdout=[$out]"
+        [ "$rc" -eq 0 ] || { echo "::error::launcher failed under emulation (exit $rc) -- fexecve-under-binfmt regression"; exit 1; }
+        # The fixture prints the selected variant's compile-time features; every x86-64
+        # variant includes sse2. Checking for it (rather than non-empty output) ensures
+        # qemu's own stdout noise (e.g. "Could not resolve /dev/fd/3") cannot pass the test.
+        case "$out" in
+          *sse2*) ;;
+          *) echo "::error::launcher did not print the variant's CPU features"; exit 1 ;;
+        esac
