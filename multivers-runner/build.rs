@@ -162,7 +162,10 @@ impl BuildsDescription {
         })?;
 
         let n_builds = patches.len();
+        let use_stmt= quote! { use std::arch::#is_feature_detected; };
         let tokens = quote! {
+            #use_stmt
+
             const SOURCE: Build<'_> = Build {
                 compressed: include_bytes!(concat!(env!("OUT_DIR"), "/", #source_filename)),
                 all_features_supported: || true #(&& #is_feature_detected!(#source_features))*,
