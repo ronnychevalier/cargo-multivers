@@ -162,7 +162,6 @@ impl BuildsDescription {
         })?;
 
         let n_builds = patches.len();
-        let use_stmt= quote! { use std::arch::#is_feature_detected; };
         let tokens = quote! {
             #[allow(unused)]
             use std::arch::#is_feature_detected;
