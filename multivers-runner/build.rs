@@ -164,7 +164,8 @@ impl BuildsDescription {
         let n_builds = patches.len();
         let use_stmt= quote! { use std::arch::#is_feature_detected; };
         let tokens = quote! {
-            #use_stmt
+            #[allow(unused)]
+            use std::arch::#is_feature_detected;
 
             const SOURCE: Build<'_> = Build {
                 compressed: include_bytes!(concat!(env!("OUT_DIR"), "/", #source_filename)),
