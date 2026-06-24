@@ -34,7 +34,11 @@ pub unsafe extern "C" fn main(argc: i32, argv: *const *const c_char, envp: *cons
     proc_exit::exit(result);
 }
 
-unsafe fn run(argc: i32, argv: *const *const c_char, envp: *const *const c_char) -> proc_exit::ExitResult {
+unsafe fn run(
+    argc: i32,
+    argv: *const *const c_char,
+    envp: *const *const c_char,
+) -> proc_exit::ExitResult {
     #[cfg(feature = "debug")]
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
 
