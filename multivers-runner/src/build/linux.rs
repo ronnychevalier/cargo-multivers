@@ -1,5 +1,5 @@
 use std::convert::Infallible;
-use std::ffi::CStr;
+use std::ffi::{CStr, c_char};
 use std::fs::File;
 use std::os::fd::{FromRawFd, IntoRawFd};
 
@@ -15,8 +15,8 @@ impl Executable for Build<'_> {
     unsafe fn exec(
         self,
         argc: i32,
-        argv: *const *const i8,
-        envp: *const *const i8,
+        argv: *const *const c_char,
+        envp: *const *const c_char,
     ) -> Result<Infallible, proc_exit::Exit> {
         let memfd_name = if argc > 0 {
             unsafe { CStr::from_ptr(*argv) }

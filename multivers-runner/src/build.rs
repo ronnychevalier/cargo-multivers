@@ -1,4 +1,5 @@
 use std::convert::Infallible;
+use std::ffi::c_char;
 use std::io::{Read, Write};
 
 include!(concat!(env!("OUT_DIR"), "/builds.rs"));
@@ -103,8 +104,8 @@ pub trait Executable {
     unsafe fn exec(
         self,
         argc: i32,
-        argv: *const *const i8,
-        envp: *const *const i8,
+        argv: *const *const c_char,
+        envp: *const *const c_char,
     ) -> Result<Infallible, proc_exit::Exit>;
 }
 
