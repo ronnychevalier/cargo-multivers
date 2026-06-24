@@ -1,4 +1,5 @@
 use std::convert::Infallible;
+use std::ffi::c_char;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
@@ -10,8 +11,8 @@ impl Executable for Build<'_> {
     unsafe fn exec(
         self,
         _argc: i32,
-        _argv: *const *const i8,
-        _envp: *const *const i8,
+        _argv: *const *const c_char,
+        _envp: *const *const c_char,
     ) -> Result<Infallible, proc_exit::Exit> {
         let mut args = std::env::args_os();
         let exe_filename = args

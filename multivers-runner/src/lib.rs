@@ -4,6 +4,8 @@
 
 mod build;
 
+use std::ffi::c_char;
+
 use build::{Build, Executable};
 
 /// Function called at program startup.
@@ -26,13 +28,17 @@ use build::{Build, Executable};
 /// - Each element of `argv` and `envp` must be valid for reads of bytes up to and including the null terminator.
 #[unsafe(no_mangle)]
 #[cfg(not(test))]
-pub unsafe extern "C" fn main(argc: i32, argv: *const *const i8, envp: *const *const i8) {
+pub unsafe extern "C" fn main(argc: i32, argv: *const *const c_char, envp: *const *const c_char) {
     let result = unsafe { run(argc, argv, envp) };
 
     proc_exit::exit(result);
 }
 
-unsafe fn run(argc: i32, argv: *const *const i8, envp: *const *const i8) -> proc_exit::ExitResult {
+unsafe fn run(
+    argc: i32,
+    argv: *const *const c_char,
+    envp: *const *const c_char,
+) -> proc_exit::ExitResult {
     #[cfg(feature = "debug")]
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
 
