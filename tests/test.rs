@@ -49,8 +49,9 @@ fn build_crate(
     modify_command_callback(&mut cargo_multivers);
 
     if !cargo_multivers.get_args().contains(OsStr::new("--")) {
-        cargo_multivers.args(["--", "--target-dir", &target_dir.display().to_string()]);
+        cargo_multivers.arg("--");
     }
+    cargo_multivers.args(["--target-dir", &target_dir.display().to_string()]);
 
     (cargo_multivers.assert(), out_dir)
 }
