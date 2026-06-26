@@ -18,6 +18,7 @@ static RUSTC: LazyLock<PathBuf> = LazyLock::new(|| {
                     .with_extension(std::env::consts::EXE_EXTENSION)
             })
         })
+        .filter(|path| path.exists())
         .unwrap_or_else(|| "rustc".into())
 });
 
