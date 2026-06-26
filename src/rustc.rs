@@ -32,7 +32,12 @@ impl Rustc {
 
     /// Returns the default target that rustc uses to build if none is provided (the host)
     pub fn default_target() -> anyhow::Result<String> {
-        let rustc_v = Self::command().arg("-vV").output()?;
+        let rustc_v = Self::command().arg("-vV").output().with_context(|| {
+            format!(
+                "Failed to execute rustc ({})",
+                Self::command().get_program().display()
+            )
+        })?;
 
         rustc_v
             .stdout
