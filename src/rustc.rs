@@ -48,7 +48,6 @@ impl Rustc {
             "x87",
             // AArch64 features that rustc emits as target_feature cfg values for Neoverse CPUs
             // but which `is_aarch64_feature_detected!` cannot detect at run-time or are unknown.
-            // they are privileged/kernel-mode extensions or are otherwise not exposed to user space.
             "lor",   // Limited Ordering Regions (ARMv8.1) — memory ordering control, EL1/EL2
             "pan",   // Privileged Access Never (ARMv8.1) — EL1/EL2 mode extension
             "pmuv3", // Performance Monitor Unit v3 — privileged performance counters
