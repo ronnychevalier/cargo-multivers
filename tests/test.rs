@@ -56,6 +56,7 @@ fn build_and_run_crate(
     modify_command_callback: impl FnOnce(&mut std::process::Command),
 ) -> (Command, tempfile::TempDir) {
     let (assert, out_dir) = build_crate(crate_name, modify_command_callback);
+    let assert = assert.success();
     println!("{assert}");
 
     let name = bin_name.unwrap_or(crate_name);
