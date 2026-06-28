@@ -219,7 +219,7 @@ impl Multivers {
                 std::fs::create_dir_all(&output_path_parent)
                     .with_context(|| format!("Failed to create directory `{}`", output_path_parent.display()))?;
                 std::fs::copy(&bin_path, &output_path)
-                    .with_context(|| format!("Failed to copy `{}` to `{}`", bin_path.display(), output_path.display()))?;
+                    .with_context(|| format!("Failed to copy build `{}` to `{}`", bin_path.display(), output_path.display()))?;
 
                 let hash = std::fs::read(&output_path).ok().map(|bytes| {
                     hasher.update(&bytes);
@@ -318,7 +318,7 @@ impl Multivers {
                     let to = out_dir.join(&original_filename);
                     std::fs::copy(&output_path, &to).with_context(|| {
                         format!(
-                            "Failed to copy `{}` to `{}`",
+                            "Failed to copy final binary `{}` to `{}`",
                             output_path.display(),
                             to.display()
                         )
@@ -361,7 +361,7 @@ impl Multivers {
                     let to = out_dir.join(&original_filename);
                     std::fs::copy(&bin_path, &to).with_context(|| {
                         format!(
-                            "Failed to copy `{}` to `{}`",
+                            "Failed to copy final binary `{}` to `{}`",
                             bin_path.display(),
                             to.display()
                         )
