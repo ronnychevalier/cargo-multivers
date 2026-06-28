@@ -52,6 +52,14 @@ impl Rustc {
         let ignored_features = [
             // See https://github.com/rust-lang/rust/issues/116344
             "x87",
+            // AArch64 features that rustc emits as target_feature cfg values for Neoverse CPUs
+            // but which `is_aarch64_feature_detected!` cannot detect at run-time or are unknown.
+            "lor",   // Limited Ordering Regions (ARMv8.1)
+            "pan",   // Privileged Access Never (ARMv8.1)
+            "pmuv3", // Performance Monitor Unit v3
+            "ras",   // Reliability, Availability and Serviceability (ARMv8.2)
+            "spe",   // Statistical Profiling Extension (ARMv8.2)
+            "vh",    // Virtualization Host Extensions (ARMv8.1)
         ];
 
         let cfg = Self::command()
