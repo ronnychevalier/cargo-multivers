@@ -79,6 +79,10 @@ pub struct Args {
     #[clap(long, value_name = "PATH", help_heading = "Compilation Options")]
     pub out_dir: Option<PathBuf>,
 
+    /// Directory for all generated artifacts
+    #[clap(long, value_name = "DIRECTORY", help_heading = "Compilation Options")]
+    pub target_dir: Option<PathBuf>,
+
     #[clap(long, value_delimiter = ' ', help_heading = "Runner Options")]
     /// Space-separated list of features to activate for the runner (only "debug" is available at the moment)
     pub runner_features: Vec<String>,

@@ -27,10 +27,6 @@ fn build_crate(
     name: &str,
     modify_command_callback: impl FnOnce(&mut std::process::Command),
 ) -> (Assert, tempfile::TempDir) {
-    use std::ffi::OsStr;
-
-    use itertools::Itertools;
-
     let out_dir: tempfile::TempDir = tempfile::tempdir().unwrap();
     let target_dir = out_dir.path().join("target");
     std::fs::create_dir(&target_dir).unwrap();
@@ -43,15 +39,12 @@ fn build_crate(
     cargo_multivers
         .arg("--manifest-path")
         .arg(test_manifest)
+        .arg("--target-dir")
+        .arg(&target_dir)
         .arg("--out-dir")
         .arg(out_dir.path());
 
     modify_command_callback(&mut cargo_multivers);
-
-    if !cargo_multivers.get_args().contains(OsStr::new("--")) {
-        cargo_multivers.arg("--");
-    }
-    cargo_multivers.args(["--target-dir", &target_dir.display().to_string()]);
 
     (cargo_multivers.assert(), out_dir)
 }

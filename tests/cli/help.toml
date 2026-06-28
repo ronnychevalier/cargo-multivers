@@ -46,6 +46,9 @@ Compilation Options:
       --out-dir <PATH>
           Copy final artifacts to this directory
 
+      --target-dir <DIRECTORY>
+          Directory for all generated artifacts
+
 Runner Options:
       --runner-version <VERSION>
           Specify the version of the runner to use

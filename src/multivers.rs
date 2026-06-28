@@ -78,10 +78,12 @@ impl Multivers {
             .exclude_features(args.exclude_cpu_features)
             .cpus(args.cpus);
 
-        let target_dir = metadata
-            .target_directory
-            .join(clap::crate_name!())
-            .into_std_path_buf();
+        let target_dir = args.target_dir.unwrap_or_else(|| {
+            metadata
+                .target_directory
+                .join(clap::crate_name!())
+                .into_std_path_buf()
+        });
 
         let runner = if let Some(path) = args.runner_manifest_path {
             RunnerBuilder::from_manifest_path(target_dir.clone(), path)
@@ -182,6 +184,7 @@ impl Multivers {
                 let cargo = CargoBuild::new()
                     .arg(format!("--profile={}", self.profile))
                     .target(&self.target)
+                    .target_dir(&self.target_dir)
                     .manifest_path(manifest_path)
                     .args(&self.cargo_args)
                     .env("RUSTFLAGS", rust_flags);
